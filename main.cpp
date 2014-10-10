@@ -47,10 +47,10 @@ int main(int argc, char const* agrv[])
 
   //{
     Trie h;
-    std::ifstream ifs("trie.txt");
-    if (!ifs.good()) {
-      return EXIT_FAILURE;
-    }
+    //std::ifstream ifs("trie.txt");
+    //if (!ifs.good()) {
+    //  return EXIT_FAILURE;
+    //}
 
     //// Convert to a static
     //std::ofstream ofs("static.txt");
@@ -66,15 +66,15 @@ int main(int argc, char const* agrv[])
     //}
 
     // Recreate the trie from a file
-    ifs >> h;
+    //ifs >> h;
 
     // Recreate the trie from a static
-    //std::stringstream ss(kSowpodsAll);
-    //ss >> h;
+    std::stringstream ss(kSowpodsAll);
+    ss >> h;
 
     // Generate a flat word list from the trie
-    WordReceiver wg(h.words);
-    h.get_words(wg);
+    WordReceiver wr(h.words);
+    h.get_words(wr);
   //}
 
   return EXIT_SUCCESS;
