@@ -107,7 +107,7 @@ int main(int argc, char const* agrv[])
   //auto results = WordFinder::StartsWith(h, "aba");
   //auto results = WordFinder::StartsWith(h, "");
 
-  auto results = WordFinder::Anagrams(h, "starline");
+  auto results = WordFinder::Anagrams(h, "sandra");
 
   return EXIT_SUCCESS;
 }
