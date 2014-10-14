@@ -8,7 +8,7 @@
 
 #include "Trie.h"
 
-static const size_t kMaxWords = 500;
+static const size_t kMaxWords = 0;
 extern unsigned char const kSowpodsAll[];
 
 class WordReceiver : public WordListener
@@ -40,7 +40,7 @@ public:
 int main(int argc, char const* agrv[])
 {
   // Create a Trie from a flat file word list
-  {
+  /*{
     std::ifstream ifs("C:\\Users\\clarkson\\Dropbox\\Projects\\Word Lists\\sowpods.txt");
     if (!ifs.good()) {
       return EXIT_FAILURE;
@@ -60,14 +60,14 @@ int main(int argc, char const* agrv[])
 
     std::ofstream ofs("trie.bin", std::ios::binary);
     ofs << h;
-  }
+  }*/
 
   //{
-    Trie h;
+   /* Trie h;
     std::ifstream ifs("trie.bin", std::ios::binary);
     if (!ifs.good()) {
       return EXIT_FAILURE;
-    }
+    }*/
 
     // Recreate the trie from a file
     //ifs >> h;
@@ -76,38 +76,38 @@ int main(int argc, char const* agrv[])
     //WordReceiver wr(h.words);
     //h.get_words(wr);
 
-    // Convert to a static
-    std::ofstream ofs("static.txt");
-    if (!ofs.good()) {
-      return EXIT_FAILURE;
-    }
-    int wrap = 8; int written = 0;
-    while (!ifs.eof()) {
-      unsigned char c;
-      ifs.read(reinterpret_cast<char*>(&c), sizeof(c));
+    //// Convert to a static
+    //std::ofstream ofs("static.txt");
+    //if (!ofs.good()) {
+    //  return EXIT_FAILURE;
+    //}
+    //int wrap = 8; int written = 0;
+    //while (!ifs.eof()) {
+    //  unsigned char c;
+    //  ifs.read(reinterpret_cast<char*>(&c), sizeof(c));
 
-      std::stringstream ss;
-      ss << "0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(c) << ",";
-      ofs << ss.str();
-      if (!(++written % wrap)) {
-        ofs << std::endl;
-      }
-    }
-    ofs.close();
+    //  std::stringstream ss;
+    //  ss << "0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(c) << ",";
+    //  ofs << ss.str();
+    //  if (!(++written % wrap)) {
+    //    ofs << std::endl;
+    //  }
+    //}
+    //ofs.close();
 
     // Recreate the trie from a static
-    Trie r;
-    Trie::read_static(kSowpodsAll, r);
+    Trie h;
+    Trie::read_static(kSowpodsAll, h);
 
     // Generate a flat word list from the trie
-    WordReceiver wr_static(r.words);
-    r.get_words(wr_static);
+    //WordReceiver wr_static(r.words);
+    //r.get_words(wr_static);
   //}
 
   //auto results = WordFinder::StartsWith(h, "aba");
   //auto results = WordFinder::StartsWith(h, "");
 
-  //auto results = WordFinder::Anagrams(h, "starline");
+  auto results = WordFinder::Anagrams(h, "starline");
 
   return EXIT_SUCCESS;
 }
