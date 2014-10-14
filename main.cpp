@@ -1,13 +1,16 @@
 #include <deque>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "Trie.h"
 
-static const int kMaxWords = -1;
-extern const char kSowpodsAll[277751];
+static const size_t kMaxWords = 500;
+extern size_t const kSowpodsAllLen;
+extern unsigned char const kSowpodsAll[];
 
 class WordReceiver : public WordListener
 {
@@ -38,7 +41,7 @@ public:
 int main(int argc, char const* agrv[])
 {
   // Create a Trie from a flat file word list
- /* {
+  {
     std::ifstream ifs("C:\\Users\\clarkson\\Dropbox\\Projects\\Word Lists\\sowpods.txt");
     if (!ifs.good()) {
       return EXIT_FAILURE;
@@ -48,7 +51,7 @@ int main(int argc, char const* agrv[])
     std::string word;
     int words = 0;
     while (std::getline(ifs, word)) {
-      if (kMaxWords >= 0 && words >= kMaxWords) {
+      if (kMaxWords && words >= kMaxWords) {
         break;
       }
 
@@ -56,46 +59,56 @@ int main(int argc, char const* agrv[])
       ++words;
     }
 
-    std::ofstream ofs("trie.txt");
+    std::ofstream ofs("trie.bin", std::ios::binary);
     ofs << h;
-  }*/
+  }
 
   //{
     Trie h;
-    //std::ifstream ifs("trie.txt");
-    //if (!ifs.good()) {
-    //  return EXIT_FAILURE;
-    //}
-
-    //// Convert to a static
-    //std::ofstream ofs("static.txt");
-    //if (!ofs.good()) {
-    //  return EXIT_FAILURE;
-    //}
-    //char c; int wrap = 16; int written = 0;
-    //while ((c = ifs.get()) != EOF) {
-    //  ofs << static_cast<int>(c) << ",";
-    //  if (!(++written % wrap)) {
-    //    ofs << std::endl;
-    //  }
-    //}
+    std::ifstream ifs("trie.bin", std::ios::binary);
+    if (!ifs.good()) {
+      return EXIT_FAILURE;
+    }
 
     // Recreate the trie from a file
     //ifs >> h;
 
+    // Retrieve all words in a flat list
+    //WordReceiver wr(h.words);
+    //h.get_words(wr);
+
+    // Convert to a static
+    std::ofstream ofs("static.txt");
+    if (!ofs.good()) {
+      return EXIT_FAILURE;
+    }
+    int wrap = 8; int written = 0;
+    while (!ifs.eof()) {
+      unsigned char c;
+      ifs.read(reinterpret_cast<char*>(&c), sizeof(c));
+
+      std::stringstream ss;
+      ss << "0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(c) << ",";
+      ofs << ss.str();
+      if (!(++written % wrap)) {
+        ofs << std::endl;
+      }
+    }
+    ofs.close();
+
     // Recreate the trie from a static
-    std::stringstream ss(kSowpodsAll);
-    ss >> h;
+    Trie r;
+    Trie::read_static(kSowpodsAll, kSowpodsAllLen, r);
 
     // Generate a flat word list from the trie
-    WordReceiver wr(h.words);
-    h.get_words(wr);
+    WordReceiver wr_static(r.words);
+    r.get_words(wr_static);
   //}
 
   //auto results = WordFinder::StartsWith(h, "aba");
   //auto results = WordFinder::StartsWith(h, "");
 
-  auto results = WordFinder::Anagrams(h, "starline");
+  //auto results = WordFinder::Anagrams(h, "starline");
 
   return EXIT_SUCCESS;
 }
