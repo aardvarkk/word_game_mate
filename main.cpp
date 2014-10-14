@@ -9,7 +9,6 @@
 #include "Trie.h"
 
 static const size_t kMaxWords = 500;
-extern size_t const kSowpodsAllLen;
 extern unsigned char const kSowpodsAll[];
 
 class WordReceiver : public WordListener
@@ -98,7 +97,7 @@ int main(int argc, char const* agrv[])
 
     // Recreate the trie from a static
     Trie r;
-    Trie::read_static(kSowpodsAll, kSowpodsAllLen, r);
+    Trie::read_static(kSowpodsAll, r);
 
     // Generate a flat word list from the trie
     WordReceiver wr_static(r.words);
