@@ -1,3 +1,4 @@
+#include <deque>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -18,6 +19,20 @@ public:
   }
 
   std::vector<std::string> wordlist;
+};
+
+class WordFinder
+{
+public:
+  static std::deque<std::string> StartsWith(Trie const& t, std::string const& str)
+  {
+    return t.search(str);
+  }
+
+  static std::deque<std::string> Anagrams(Trie const& t, std::string const& str, size_t letters = 0)
+  {
+    return t.anagrams(str, letters);
+  }
 };
 
 int main(int argc, char const* agrv[])
@@ -76,6 +91,11 @@ int main(int argc, char const* agrv[])
     WordReceiver wr(h.words);
     h.get_words(wr);
   //}
+
+  //auto results = WordFinder::StartsWith(h, "aba");
+  //auto results = WordFinder::StartsWith(h, "");
+
+  auto results = WordFinder::Anagrams(h, "starline");
 
   return EXIT_SUCCESS;
 }
