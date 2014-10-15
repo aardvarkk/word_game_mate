@@ -112,8 +112,23 @@ int main(int argc, char const* agrv[])
 
   //auto results = WordFinder::Anagrams(h, "sandra");
 
+  // TEST 1
+  //Trie h;
+  //h.insert("hi");
+  //h.insert("ma");
+  //h.renumber();
+  //auto results = WordFinder::Consume(h, "ahim");
+
+  // TEST 2
+  //Trie h;
+  //h.insert("aa");
+  //h.insert("abac");
+  //h.renumber();
+  //auto results = WordFinder::Consume(h, "abac");
+
   // When consuming, can just consume "depth-first", because ordering doesn't matter
   // It will always return the words in alphabetical order, but that's OK because you can rearrange
+  h.renumber();
   auto results = WordFinder::Consume(h, "ianclarkson");
 
   return EXIT_SUCCESS;
