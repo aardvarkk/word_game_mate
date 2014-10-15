@@ -33,16 +33,26 @@ public:
     return t.search(str);
   }
 
-  // Anagrams finds words that can be made from the source string
-  static std::deque<std::string> Anagrams(Trie const& t, std::string const& str, size_t letters = 0)
+  // Take the source string and make words from it
+  // Will create multiple words if possible
+  // Will take into account min and max word lengths for sub-words
+  static std::deque<std::vector<std::string>> Anagrams(
+    Trie const& t, 
+    std::string const& str,
+    bool consume_all = true,
+    size_t* min_wordlet = nullptr,
+    size_t* max_wordlet = nullptr
+    )
   {
-    return t.anagrams(str, letters);
-  }
+    // Adjust ranges for validity
+    if (min_wordlet) {
+      *min_wordlet = std::max<size_t>(*min_wordlet, 1);
+    }
+    if (max_wordlet) {
+      *max_wordlet = std::min<size_t>(*max_wordlet, str.size());
+    }
 
-  // "Consume" allows multiple words to be created to use the source string
-  static std::deque<std::vector<std::string>> Consume(Trie const& t, std::string const& str, size_t min_letters = 2)
-  {
-    return t.consume(str, min_letters);
+    return t.anagrams(str, consume_all, min_wordlet, max_wordlet);
   }
 };
 
@@ -141,7 +151,13 @@ int main(int argc, char const* agrv[])
 
   // TEST
   //auto results = WordFinder::Anagrams(h, "hi?", 4);
-  auto results = WordFinder::Consume(h, "batca?", 3);
+  
+  size_t min_wordlet = 5;
+  size_t max_wordlet = 6;
+  //auto results = WordFinder::Anagrams(h, "batca?", &minlen, nullptr);
+  //auto results = WordFinder::Anagrams(h, "???", &minlen, &maxlen);
+  //auto results = WordFinder::Anagrams(h, "ianclarkson", &minlen, &maxlen);
+  auto results = WordFinder::Anagrams(h, "cats?", false, &min_wordlet, &max_wordlet);
 
   // Can specify an exact number of letters to search for
   // If we want to search for a range, could just run this search multiple times (once for each value in the range)
