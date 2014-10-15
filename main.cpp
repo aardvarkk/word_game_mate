@@ -152,12 +152,13 @@ int main(int argc, char const* agrv[])
   // TEST
   //auto results = WordFinder::Anagrams(h, "hi?", 4);
   
-  size_t min_wordlet = 5;
-  size_t max_wordlet = 6;
+  size_t min_wordlet = 4;
+  size_t max_wordlet = 7;
   //auto results = WordFinder::Anagrams(h, "batca?", &minlen, nullptr);
   //auto results = WordFinder::Anagrams(h, "???", &minlen, &maxlen);
   //auto results = WordFinder::Anagrams(h, "ianclarkson", &minlen, &maxlen);
-  auto results = WordFinder::Anagrams(h, "cats?", false, &min_wordlet, &max_wordlet);
+  //auto results = WordFinder::Anagrams(h, "cats?", false, &min_wordlet, &max_wordlet);
+  auto results = WordFinder::Anagrams(h, "ianclarkson", true, &min_wordlet, &max_wordlet);
 
   // Can specify an exact number of letters to search for
   // If we want to search for a range, could just run this search multiple times (once for each value in the range)
