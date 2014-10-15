@@ -140,13 +140,17 @@ int main(int argc, char const* agrv[])
   Trie::read_static(kSowpodsAll, h);
 
   // TEST
-  auto results = WordFinder::Anagrams(h, "hi?", 4);
+  //auto results = WordFinder::Anagrams(h, "hi?", 4);
+  auto results = WordFinder::Consume(h, "batca?", 3);
 
   // Can specify an exact number of letters to search for
   // If we want to search for a range, could just run this search multiple times (once for each value in the range)
   //auto results = WordFinder::Anagrams(h, "hithere", 6);
   for (auto r : results) {
-    std::cout << r << std::endl;
+    for (auto w : r) {
+      std::cout << w << " ";
+    }
+    std::cout << std::endl;
   }
 
   // Generate a flat word list from the trie
