@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cassert>
 #include <deque>
 #include <fstream>
 #include <iomanip>
@@ -42,25 +44,58 @@ public:
   }
 };
 
+class StringUtils
+{
+public:
+  static inline int compare_prioritize_length(std::string const& a, std::string const& b)
+  {
+    if (a.size() > b.size()) {
+      return 1;
+    } else if (a.size() < b.size()) {
+      return -1;
+    } else {
+      return a.compare(b);
+    }
+  }
+
+  static inline int compare_wordsets(std::vector<std::string> const& a, std::vector<std::string> const& b) {
+    // Sort each wordset
+    auto sorted_a = a;
+    std::sort(sorted_a.begin(), sorted_a.end(), [](std::string const& a, std::string const& b) -> bool { return StringUtils::compare_prioritize_length(a, b) > 0; });
+    auto sorted_b = b;
+    std::sort(sorted_b.begin(), sorted_b.end(), [](std::string const& a, std::string const& b) -> bool { return StringUtils::compare_prioritize_length(a, b) > 0; });
+
+    // Go through each wordset, starting at the top
+    // Keep descending until we find a difference...
+    auto a_it = sorted_a.begin();
+    auto b_it = sorted_b.begin();
+    while (StringUtils::compare_prioritize_length(*a_it, *b_it) == 0) {
+      ++a_it;
+      ++b_it;
+    }
+    return StringUtils::compare_prioritize_length(*a_it, *b_it) > 0;
+  }
+};
+
 int main(int argc, char const* agrv[])
 {
-  // Create a Trie from a flat file word list
-  std::ifstream ifs("C:\\Users\\clarkson\\Dropbox\\Projects\\Word Lists\\sowpods.txt");
-  if (!ifs.good()) {
-    return EXIT_FAILURE;
-  }
+  //// Create a Trie from a flat file word list
+  //std::ifstream ifs("C:\\Users\\clarkson\\Dropbox\\Projects\\Word Lists\\sowpods.txt");
+  //if (!ifs.good()) {
+  //  return EXIT_FAILURE;
+  //}
 
-  Trie h;
-  std::string word;
-  int words = 0;
-  while (std::getline(ifs, word)) {
-    if (kMaxWords && words >= kMaxWords) {
-      break;
-    }
+  //Trie h;
+  //std::string word;
+  //int words = 0;
+  //while (std::getline(ifs, word)) {
+  //  if (kMaxWords && words >= kMaxWords) {
+  //    break;
+  //  }
 
-    h.insert(word);
-    ++words;
-  }
+  //  h.insert(word);
+  //  ++words;
+  //}
 
   //std::ofstream ofs("trie.bin", std::ios::binary);
   //ofs << h;
@@ -99,8 +134,8 @@ int main(int argc, char const* agrv[])
   //ofs.close();
 
   // Recreate the trie from a static
-  //Trie h;
-  //Trie::read_static(kSowpodsAll, h);
+  Trie h;
+  Trie::read_static(kSowpodsAll, h);
 
   // Generate a flat word list from the trie
   //WordReceiver wr_static(r.words);
@@ -110,26 +145,87 @@ int main(int argc, char const* agrv[])
   //auto results = WordFinder::StartsWith(h, "aba");
   //auto results = WordFinder::StartsWith(h, "");
 
-  //auto results = WordFinder::Anagrams(h, "sandra");
-
   // TEST 1
   //Trie h;
   //h.insert("hi");
   //h.insert("ma");
-  //h.renumber();
   //auto results = WordFinder::Consume(h, "ahim");
 
   // TEST 2
   //Trie h;
   //h.insert("aa");
   //h.insert("abac");
-  //h.renumber();
   //auto results = WordFinder::Consume(h, "abac");
+
+  //// TEST 3
+  //Trie h;
+  //h.insert("ae");
+  //h.insert("nirl");
+  //h.insert("st");
+  //auto results = WordFinder::Consume(h, "starline");
+
+  //// TEST 4
+  //Trie h;
+  //h.insert("airlock");
+  //h.insert("airlocks");
+  //h.insert("nan");
+  //h.insert("nans");
+  //h.insert("ann");
+  //h.insert("anns");
+  //auto results = WordFinder::Consume(h, "nacakirosln");
+
+  // TEST 5
+  assert(StringUtils::compare_prioritize_length("a", "b") < 0);
+  assert(StringUtils::compare_prioritize_length("aa", "b") > 0);
+  assert(StringUtils::compare_prioritize_length("aa", "aa") == 0);
+  assert(StringUtils::compare_prioritize_length("b", "a") > 0);
+  assert(StringUtils::compare_prioritize_length("aa", "ab") < 0);
+  assert(StringUtils::compare_prioritize_length("alky", "red") > 0);
+  assert(StringUtils::compare_prioritize_length("nib", "red") < 0);
 
   // When consuming, can just consume "depth-first", because ordering doesn't matter
   // It will always return the words in alphabetical order, but that's OK because you can rearrange
-  h.renumber();
-  auto results = WordFinder::Consume(h, "ianclarkson");
+  //auto results = WordFinder::Consume(h, "rankoilcans");
+
+  // Sort by longest word
+  //auto sorted_longest = results;
+  //std::sort(sorted_longest.begin(), sorted_longest.end(), [](std::vector<std::string> const& a, std::vector<std::string> const& b) -> bool
+  //{
+  //  return StringUtils::compare_wordsets(a, b) > 0;
+  //});
+
+  // Sort by fewest words
+  //auto sorted_fewest = results;
+  //std::sort(sorted_fewest.begin(), sorted_fewest.end(), [](std::vector<std::string> const& a, std::vector<std::string> const& b) -> bool
+  //{
+  //  if (a.size() != b.size()) {
+  //    return a.size() < b.size();
+  //  }
+  //  // Same number of words, so must use sorting from longest word above to find lexicographically higher one
+  //  else {
+  //    return StringUtils::compare_wordsets(a, b) > 0;
+  //  }
+  //});
+
+  //// Sort by most words
+  //auto sorted_most = results;
+  //std::sort(sorted_most.begin(), sorted_most.end(), [](std::vector<std::string> const& a, std::vector<std::string> const& b) -> bool
+  //{
+  //  if (a.size() != b.size()) {
+  //    return a.size() > b.size();
+  //  }
+  //  // Same number of words, so must use sorting from longest word above to find lexicographically higher one
+  //  else {
+  //    return StringUtils::compare_wordsets(a, b) < 0;
+  //  }
+  //});
+
+  //for (size_t i = 0; i < std::min<size_t>(sorted_fewest.size(), 500); ++i) {
+  //  for (auto w : sorted_fewest[i]) {
+  //    std::cout << w << " ";
+  //  }
+  //  std::cout << std::endl;
+  //}
 
   return EXIT_SUCCESS;
 }
