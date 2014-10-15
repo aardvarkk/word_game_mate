@@ -33,11 +33,13 @@ public:
     return t.search(str);
   }
 
+  // Anagrams finds words that can be made from the source string
   static std::deque<std::string> Anagrams(Trie const& t, std::string const& str, size_t letters = 0)
   {
     return t.anagrams(str, letters);
   }
 
+  // "Consume" allows multiple words to be created to use the source string
   static std::deque<std::vector<std::string>> Consume(Trie const& t, std::string const& str, size_t min_letters = 2)
   {
     return t.consume(str, min_letters);
@@ -137,6 +139,16 @@ int main(int argc, char const* agrv[])
   Trie h;
   Trie::read_static(kSowpodsAll, h);
 
+  // TEST
+  auto results = WordFinder::Anagrams(h, "hi?", 4);
+
+  // Can specify an exact number of letters to search for
+  // If we want to search for a range, could just run this search multiple times (once for each value in the range)
+  //auto results = WordFinder::Anagrams(h, "hithere", 6);
+  for (auto r : results) {
+    std::cout << r << std::endl;
+  }
+
   // Generate a flat word list from the trie
   //WordReceiver wr_static(r.words);
   //r.get_words(wr_static);
@@ -175,13 +187,13 @@ int main(int argc, char const* agrv[])
   //auto results = WordFinder::Consume(h, "nacakirosln");
 
   // TEST 5
-  assert(StringUtils::compare_prioritize_length("a", "b") < 0);
-  assert(StringUtils::compare_prioritize_length("aa", "b") > 0);
-  assert(StringUtils::compare_prioritize_length("aa", "aa") == 0);
-  assert(StringUtils::compare_prioritize_length("b", "a") > 0);
-  assert(StringUtils::compare_prioritize_length("aa", "ab") < 0);
-  assert(StringUtils::compare_prioritize_length("alky", "red") > 0);
-  assert(StringUtils::compare_prioritize_length("nib", "red") < 0);
+  //assert(StringUtils::compare_prioritize_length("a", "b") < 0);
+  //assert(StringUtils::compare_prioritize_length("aa", "b") > 0);
+  //assert(StringUtils::compare_prioritize_length("aa", "aa") == 0);
+  //assert(StringUtils::compare_prioritize_length("b", "a") > 0);
+  //assert(StringUtils::compare_prioritize_length("aa", "ab") < 0);
+  //assert(StringUtils::compare_prioritize_length("alky", "red") > 0);
+  //assert(StringUtils::compare_prioritize_length("nib", "red") < 0);
 
   // When consuming, can just consume "depth-first", because ordering doesn't matter
   // It will always return the words in alphabetical order, but that's OK because you can rearrange
