@@ -158,17 +158,17 @@ int main(int argc, char const* agrv[])
   //auto results = WordFinder::Anagrams(h, "???", &minlen, &maxlen);
   //auto results = WordFinder::Anagrams(h, "ianclarkson", &minlen, &maxlen);
   //auto results = WordFinder::Anagrams(h, "cats?", false, &min_wordlet, &max_wordlet);
-  auto results = WordFinder::Anagrams(h, "ianclarkson", true, &min_wordlet, &max_wordlet);
+  auto results = WordFinder::Anagrams(h, "ianclarkson");
 
   // Can specify an exact number of letters to search for
   // If we want to search for a range, could just run this search multiple times (once for each value in the range)
   //auto results = WordFinder::Anagrams(h, "hithere", 6);
-  for (auto r : results) {
-    for (auto w : r) {
-      std::cout << w << " ";
-    }
-    std::cout << std::endl;
-  }
+  //for (auto r : results) {
+  //  for (auto w : r) {
+  //    std::cout << w << " ";
+  //  }
+  //  std::cout << std::endl;
+  //}
 
   // Generate a flat word list from the trie
   //WordReceiver wr_static(r.words);
