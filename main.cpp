@@ -14,25 +14,25 @@
 
 #include "Trie.h"
 
-static const size_t kMaxResults = 8;
-static const size_t kMaxWords = 0;
-extern unsigned char const kSowpodsAll[];
-
 typedef std::vector<std::string> Strings;
 typedef std::deque<Strings> Results;
-static std::vector<Trie*> wordlists_;
 
-class WordReceiver : public WordListener
+static const size_t kMaxResults = 8;
+static const size_t kMaxWords = 0;
+
+extern unsigned char const kSowpodsAll[];
+
+static  std::vector<Trie*> wordlists_;
+
+enum SortMethod
 {
-public:
-  WordReceiver(int words) { wordlist.reserve(words); }
-  virtual void word(std::string const& w)
-  {
-    wordlist.push_back(w);
-  }
-
-  Strings wordlist;
+  kLongestWord = 0,
+  kFewestWords,
+  kMostWords,
+  kNumSortMethods
 };
+
+static SortMethod sort_method_ = kLongestWord;
 
 class WordFinder
 {
@@ -100,12 +100,22 @@ public:
   }
 };
 
+std::string SortMethodString(SortMethod sort_method)
+{
+  switch (sort_method) {
+  case kLongestWord:
+    return "Longest Word";
+  case kFewestWords:
+    return "Fewest Words";
+  case kMostWords:
+    return "Most Words";
+  default:
+    return "Unknown";
+  }
+}
+
 void draw_display()
 {
-  rlutil::setColor(rlutil::YELLOW);
-  std::cout << std::endl;
-  std::cout << "Word Game Mate" << std::endl;
-  std::cout << std::endl;
   rlutil::setColor(rlutil::WHITE);
   std::cout << "Loaded Word Lists:" << std::endl;
   if (wordlists_.empty()) {
@@ -117,11 +127,30 @@ void draw_display()
     }
   }
   std::cout << std::endl;
+
+  rlutil::setColor(rlutil::LIGHTBLUE);
+  std::cout << "Sort Method: ";
+  for (int i = 0; i < kNumSortMethods; ++i) {
+    if (static_cast<int>(sort_method_) == i) {
+      rlutil::setColor(rlutil::WHITE);
+      std::cout << SortMethodString(static_cast<SortMethod>(i));
+    }
+    else {
+      rlutil::setColor(rlutil::LIGHTBLUE);
+      std::cout << SortMethodString(static_cast<SortMethod>(i));
+    }
+    if (i < kNumSortMethods - 1) {
+      rlutil::setColor(rlutil::LIGHTBLUE);
+      std::cout << " | ";
+    }
+  }
+  std::cout << std::endl << std::endl;
+
   rlutil::setColor(rlutil::LIGHTCYAN);
   std::cout << "Commands:" << std::endl;
-  std::cout << "a: anagram (longest word)" << std::endl;
-  std::cout << "w: anagram (most words)" << std::endl;
-  std::cout << "e: anagram (fewest words)" << std::endl;
+  std::cout << "a: anagram" << std::endl;
+  std::cout << "b: word box" << std::endl;
+  std::cout << "c: change sort" << std::endl;
   std::cout << "s: load SOWPODS" << std::endl;
   std::cout << "q: quit" << std::endl;
   std::cout << std::endl;
@@ -145,6 +174,7 @@ Results command_anagram()
     std::getline(std::cin, wordlist_str);
     wordlist = std::stoi(wordlist_str);
   }
+
   std::cout << "Enter letters:" << std::endl;
   std::string letters;
   std::getline(std::cin, letters);
@@ -154,9 +184,9 @@ Results command_anagram()
   std::getline(std::cin, consume_all_str);
   bool consume_all = !(!consume_all_str.empty() && std::tolower(consume_all_str[0]) == 'n');
 
-  // Set default wordlet sizes based on whether we want to consume the entire string
-  size_t min_wordlet = consume_all ? letters.size() : 2;
-  size_t max_wordlet = consume_all ? letters.size() : 2;
+  // Set default wordlet sizes
+  size_t min_wordlet = 2;
+  size_t max_wordlet = letters.size();
 
   std::cout << "Enter minimum wordlet size (default = " << min_wordlet << "):" << std::endl;
   std::string min_wordlet_str;
@@ -185,11 +215,62 @@ Results command_anagram()
     );
 }
 
+Results sort_results(Results const& unsorted)
+{
+  auto sorted = unsorted;
+
+  switch (sort_method_) {
+
+    // Sort by longest word
+  case kLongestWord:
+  {
+    std::sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+    {
+      return StringUtils::compare_wordsets(a, b) > 0;
+    });
+  }
+    break;
+
+    // Sort by most words
+  case kMostWords:
+  {
+    std::sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+    {
+      if (a.size() != b.size()) {
+        return a.size() > b.size();
+      }
+      // Same number of words, so must use sorting from longest word above to find lexicographically higher one
+      else {
+        return StringUtils::compare_wordsets(a, b) < 0;
+      }
+    });
+  }
+    break;
+
+    // Sort by fewest words
+  case kFewestWords:
+  {
+    std::sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+    {
+      if (a.size() != b.size()) {
+        return a.size() < b.size();
+      }
+      // Same number of words, so must use sorting from longest word above to find lexicographically higher one
+      else {
+        return StringUtils::compare_wordsets(a, b) > 0;
+      }
+    });
+  }
+    break;
+
+  }
+
+  return sorted;
+}
+
 void print_results(Results results)
 {
   rlutil::setColor(rlutil::LIGHTMAGENTA);
-
-  std::cout << std::endl;
 
   if (results.empty()) {
     std::cout << "No results" << std::endl;
@@ -207,77 +288,54 @@ void print_results(Results results)
     }
     std::cout << std::endl;
   }
+  std::cout << std::endl;
 }
 
 int command_loop()
 {
   bool quit = false;
 
-  // Can set background colours by shifting background color by 4
-  //rlutil::setColor((rlutil::BLUE << 4) | rlutil::YELLOW);
-  rlutil::cls();
-
   while (!quit) {
     draw_display();
+    
+    // Wait for a keypress, and clear once we've received it
     auto key = rlutil::getkey();
+    rlutil::cls();
+
     switch (tolower(key)) {
+
+      // Do a word anagram
     case 'a':
     {
-      // Sort by longest word
-      auto sorted_longest = command_anagram();
-      std::sort(sorted_longest.begin(), sorted_longest.end(), [](Strings const& a, Strings const& b) -> bool
-      {
-        return StringUtils::compare_wordsets(a, b) > 0;
-      });
-      print_results(sorted_longest);
+      auto sorted = sort_results(command_anagram());
+      print_results(sorted);
     }
-    break;
-    case 'w':
+      break;
+
+      // Accept letters in "box" format
+    case 'b':
     {
-      // Sort by most words
-      auto sorted_most = command_anagram();
-      std::sort(sorted_most.begin(), sorted_most.end(), [](Strings const& a, Strings const& b) -> bool
-      {
-        if (a.size() != b.size()) {
-          return a.size() > b.size();
-        }
-        // Same number of words, so must use sorting from longest word above to find lexicographically higher one
-        else {
-          return StringUtils::compare_wordsets(a, b) < 0;
-        }
-      });
-      print_results(sorted_most);
+      //auto rcommand_box;
+      //print_results();
     }
-    break;
-    case 'e':
-    {
-      // Sort by fewest words
-      auto sorted_fewest = command_anagram();
-      std::sort(sorted_fewest.begin(), sorted_fewest.end(), [](Strings const& a, Strings const& b) -> bool
-      {
-        if (a.size() != b.size()) {
-          return a.size() < b.size();
-        }
-        // Same number of words, so must use sorting from longest word above to find lexicographically higher one
-        else {
-          return StringUtils::compare_wordsets(a, b) > 0;
-        }
-      });
-      print_results(sorted_fewest);
-    }
-    break;
+      break;
+
+    case 'c':
+      sort_method_ = static_cast<SortMethod>((static_cast<int>(sort_method_)+1)%kNumSortMethods);
+      break;
+
     case 's':
     {
       auto s = new Trie("SOWPODS");
       Trie::read_static(kSowpodsAll, *s);
       wordlists_.push_back(s);
     }
-    break;
+      break;
+
     case 'q':
-    {
       quit = true;
-    }
-    break;
+      break;
+
     }
   }
 
@@ -290,6 +348,14 @@ int command_loop()
 
 int main(int argc, char const* agrv[])
 {
+  // Can set background colours by shifting background color by 4
+  //rlutil::setColor((rlutil::BLUE << 4) | rlutil::YELLOW);
+  rlutil::cls();
+
+  rlutil::setColor(rlutil::YELLOW);
+  std::cout << "Word Game Mate" << std::endl;
+  std::cout << std::endl;
+
   command_loop();
 
   //// Create a Trie from a flat file word list
@@ -359,11 +425,6 @@ int main(int argc, char const* agrv[])
   //    std::cout << w << " ";
   //  }
   //  std::cout << std::endl;
-  //}
-
-  // Generate a flat word list from the trie
-  //WordReceiver wr_static(r.words);
-  //r.get_words(wr_static);
   //}
 
   //auto results = WordFinder::StartsWith(h, "aba");
