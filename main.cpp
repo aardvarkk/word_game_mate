@@ -63,6 +63,28 @@ public:
 
     return t.anagrams(str, consume_all, min_wordlet, max_wordlet);
   }
+
+  static Strings Box(
+    Trie const& t,
+    Strings const& box,
+    size_t* min_wordlet = nullptr,
+    size_t* max_wordlet = nullptr
+    )
+  {
+    if (box.empty() || box.front().empty()) {
+      return Strings();
+    }
+
+    // Adjust ranges for validity
+    if (min_wordlet) {
+      *min_wordlet = std::max<size_t>(*min_wordlet, 1);
+    }
+    if (max_wordlet) {
+      *max_wordlet = std::min<size_t>(*max_wordlet, box.front().length());
+    }
+
+    return t.box(box, min_wordlet, max_wordlet);
+  }
 };
 
 class StringUtils
@@ -156,25 +178,29 @@ void draw_display()
   std::cout << std::endl;
 }
 
-Results command_anagram()
+int get_wordlist()
 {
   if (wordlists_.empty()) {
     rlutil::setColor(rlutil::LIGHTRED);
     std::cout << "No wordlists loaded!" << std::endl;
-    return Results();
+    return -1;
   }
 
   rlutil::setColor(rlutil::LIGHTGREEN);
 
   // Need to choose a word list if we have multiple
-  int wordlist = 0;
   if (wordlists_.size() > 1) {
     std::cout << "Choose a wordlist:" << std::endl;
     std::string wordlist_str;
     std::getline(std::cin, wordlist_str);
-    wordlist = std::stoi(wordlist_str);
+    return std::stoi(wordlist_str);
   }
 
+  return 0;
+}
+
+Results command_anagram(Trie const& wordlist)
+{
   std::cout << "Enter letters:" << std::endl;
   std::string letters;
   std::getline(std::cin, letters);
@@ -207,12 +233,73 @@ Results command_anagram()
   }
 
   return WordFinder::Anagrams(
-    *wordlists_[wordlist],
+    wordlist,
     letters,
     consume_all,
     min_wordlet > 0 ? &min_wordlet : nullptr,
     max_wordlet > 0 ? &max_wordlet : nullptr
     );
+}
+
+Strings command_box(Trie const& wordlist)
+{
+  std::cout << "Enter box (finish lines with ';'):" << std::endl;
+  Strings box;
+  for (;;) {
+    std::string line;
+    std::getline(std::cin, line);
+
+    // The letters to add
+    std::string letter_str = line;
+
+    // We've added a new line
+    bool add_more = !line.empty() && line.back() == ';';
+    if (add_more) {
+      // Trim the letters, since we don't want the semicolon
+      letter_str = line;
+      letter_str.pop_back();
+    }
+
+    // Check that the letters we're adding match length of existing
+    if (box.size() > 0 && letter_str.length() != box.back().length()) {
+      rlutil::setColor(rlutil::LIGHTRED);
+      std::cout << "Box line length doesn't match previous" << std::endl << std::endl;
+      return Strings();
+    }
+
+    // Add our letters to the box
+    box.push_back(letter_str);
+
+    // We're done if we didn't end with a semicolon
+    if (!add_more) {
+      break;
+    }
+  }
+
+  // Set default wordlet sizes
+  size_t min_wordlet = 2;
+  size_t max_wordlet = box.size() * box.front().size();
+
+  std::cout << "Enter minimum wordlet size (default = " << min_wordlet << "):" << std::endl;
+  std::string min_wordlet_str;
+  std::getline(std::cin, min_wordlet_str);
+  try {
+    min_wordlet = std::stoul(min_wordlet_str);
+  }
+  catch (...) {
+  }
+
+  std::cout << "Enter maximum wordlet size (default = " << max_wordlet << "):" << std::endl;
+  std::string max_wordlet_str;
+  std::getline(std::cin, max_wordlet_str);
+  try {
+    max_wordlet = std::stoul(max_wordlet_str);
+  }
+  catch (...) {
+  }
+
+  // We now have a box to process, so run a Trie algorithm on it
+  return WordFinder::Box(wordlist, box, &min_wordlet, &max_wordlet);
 }
 
 Results sort_results(Results const& unsorted)
@@ -268,25 +355,47 @@ Results sort_results(Results const& unsorted)
   return sorted;
 }
 
-void print_results(Results results)
+void print_results(Results const& results)
 {
   rlutil::setColor(rlutil::LIGHTMAGENTA);
 
   if (results.empty()) {
-    std::cout << "No results" << std::endl;
+    std::cout << "No results" << std::endl << std::endl;
     return;
   }
 
   if (results.size() > kMaxResults) {
     std::cout << "Displaying top " << kMaxResults << " of " << results.size() << " results:" << std::endl;
   }
+  else {
+    std::cout << "Results:" << std::endl;
+  }
 
-  std::cout << "Results:" << std::endl;
   for (size_t i = 0; i < std::min(results.size(), kMaxResults); ++i) {
     for (auto w : results[i]) {
       std::cout << w << " ";
     }
     std::cout << std::endl;
+  }
+  std::cout << std::endl;
+}
+
+void print_strings(Strings const& strings)
+{
+  rlutil::setColor(rlutil::LIGHTMAGENTA);
+
+  if (strings.empty()) {
+    std::cout << "No results" << std::endl;
+    return;
+  }
+
+  if (strings.size() > kMaxResults) {
+    std::cout << "Displaying top " << kMaxResults << " of " << strings.size() << " results:" << std::endl;
+  }
+
+  std::cout << "Results:" << std::endl;
+  for (size_t i = 0; i < std::min(strings.size(), kMaxResults); ++i) {
+    std::cout << strings[i] << std::endl;
   }
   std::cout << std::endl;
 }
@@ -307,7 +416,11 @@ int command_loop()
       // Do a word anagram
     case 'a':
     {
-      auto sorted = sort_results(command_anagram());
+      auto wl_idx = get_wordlist();
+      if (wl_idx < 0) {
+        break;
+      }
+      auto sorted = sort_results(command_anagram(*wordlists_[wl_idx]));
       print_results(sorted);
     }
       break;
@@ -315,8 +428,12 @@ int command_loop()
       // Accept letters in "box" format
     case 'b':
     {
-      //auto rcommand_box;
-      //print_results();
+      auto wl_idx = get_wordlist();
+      if (wl_idx < 0) {
+        break;
+      }
+      auto unsorted = command_box(*wordlists_[wl_idx]);
+      print_strings(unsorted);
     }
       break;
 
