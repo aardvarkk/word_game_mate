@@ -64,15 +64,16 @@ public:
     return t.anagrams(str, consume_all, min_wordlet, max_wordlet);
   }
 
-  static Strings Box(
+  static Results Box(
     Trie const& t,
     Strings const& box,
+    bool consume_all,
     size_t* min_wordlet = nullptr,
     size_t* max_wordlet = nullptr
     )
   {
     if (box.empty() || box.front().empty()) {
-      return Strings();
+      return Results();
     }
 
     // Adjust ranges for validity
@@ -80,10 +81,10 @@ public:
       *min_wordlet = std::max<size_t>(*min_wordlet, 1);
     }
     if (max_wordlet) {
-      *max_wordlet = std::min<size_t>(*max_wordlet, box.front().length());
+      *max_wordlet = std::min<size_t>(*max_wordlet, box.size() * box.front().size());
     }
 
-    return t.box(box, min_wordlet, max_wordlet);
+    return t.box(box, consume_all, min_wordlet, max_wordlet);
   }
 };
 
@@ -199,20 +200,17 @@ int get_wordlist()
   return 0;
 }
 
-Results command_anagram(Trie const& wordlist)
+// Collects info on whether or not to consume all input and wordlet sizes
+void command_common(size_t input_size, bool& consume_all, size_t& min_wordlet, size_t& max_wordlet)
 {
-  std::cout << "Enter letters:" << std::endl;
-  std::string letters;
-  std::getline(std::cin, letters);
-
   std::cout << "Consume all (y/n, default = y):" << std::endl;
   std::string consume_all_str;
   std::getline(std::cin, consume_all_str);
-  bool consume_all = !(!consume_all_str.empty() && std::tolower(consume_all_str[0]) == 'n');
+  consume_all = !(!consume_all_str.empty() && std::tolower(consume_all_str[0]) == 'n');
 
   // Set default wordlet sizes
-  size_t min_wordlet = 2;
-  size_t max_wordlet = letters.size();
+  min_wordlet = 2;
+  max_wordlet = input_size;
 
   std::cout << "Enter minimum wordlet size (default = " << min_wordlet << "):" << std::endl;
   std::string min_wordlet_str;
@@ -231,6 +229,17 @@ Results command_anagram(Trie const& wordlist)
   }
   catch (...) {
   }
+}
+
+Results command_anagram(Trie const& wordlist)
+{
+  std::cout << "Enter letters:" << std::endl;
+  std::string letters;
+  std::getline(std::cin, letters);
+
+  bool consume_all;
+  size_t min_wordlet, max_wordlet;
+  command_common(letters.size(), consume_all, min_wordlet, max_wordlet);
 
   return WordFinder::Anagrams(
     wordlist,
@@ -241,7 +250,7 @@ Results command_anagram(Trie const& wordlist)
     );
 }
 
-Strings command_box(Trie const& wordlist)
+Results command_box(Trie const& wordlist)
 {
   std::cout << "Enter box (finish lines with ';'):" << std::endl;
   Strings box;
@@ -264,7 +273,7 @@ Strings command_box(Trie const& wordlist)
     if (box.size() > 0 && letter_str.length() != box.back().length()) {
       rlutil::setColor(rlutil::LIGHTRED);
       std::cout << "Box line length doesn't match previous" << std::endl << std::endl;
-      return Strings();
+      return Results();
     }
 
     // Add our letters to the box
@@ -276,30 +285,16 @@ Strings command_box(Trie const& wordlist)
     }
   }
 
-  // Set default wordlet sizes
-  size_t min_wordlet = 2;
-  size_t max_wordlet = box.size() * box.front().size();
-
-  std::cout << "Enter minimum wordlet size (default = " << min_wordlet << "):" << std::endl;
-  std::string min_wordlet_str;
-  std::getline(std::cin, min_wordlet_str);
-  try {
-    min_wordlet = std::stoul(min_wordlet_str);
-  }
-  catch (...) {
+  if (box.empty() || box.front().empty()) {
+    return Results();
   }
 
-  std::cout << "Enter maximum wordlet size (default = " << max_wordlet << "):" << std::endl;
-  std::string max_wordlet_str;
-  std::getline(std::cin, max_wordlet_str);
-  try {
-    max_wordlet = std::stoul(max_wordlet_str);
-  }
-  catch (...) {
-  }
+  bool consume_all;
+  size_t min_wordlet, max_wordlet;
+  command_common(box.size() * box.front().size(), consume_all, min_wordlet, max_wordlet);
 
   // We now have a box to process, so run a Trie algorithm on it
-  return WordFinder::Box(wordlist, box, &min_wordlet, &max_wordlet);
+  return WordFinder::Box(wordlist, box, consume_all, &min_wordlet, &max_wordlet);
 }
 
 Results sort_results(Results const& unsorted)
@@ -380,26 +375,6 @@ void print_results(Results const& results)
   std::cout << std::endl;
 }
 
-void print_strings(Strings const& strings)
-{
-  rlutil::setColor(rlutil::LIGHTMAGENTA);
-
-  if (strings.empty()) {
-    std::cout << "No results" << std::endl;
-    return;
-  }
-
-  if (strings.size() > kMaxResults) {
-    std::cout << "Displaying top " << kMaxResults << " of " << strings.size() << " results:" << std::endl;
-  }
-
-  std::cout << "Results:" << std::endl;
-  for (size_t i = 0; i < std::min(strings.size(), kMaxResults); ++i) {
-    std::cout << strings[i] << std::endl;
-  }
-  std::cout << std::endl;
-}
-
 int command_loop()
 {
   bool quit = false;
@@ -432,8 +407,8 @@ int command_loop()
       if (wl_idx < 0) {
         break;
       }
-      auto unsorted = command_box(*wordlists_[wl_idx]);
-      print_strings(unsorted);
+      auto sorted = sort_results(command_box(*wordlists_[wl_idx]));
+      print_results(sorted);
     }
       break;
 
@@ -465,16 +440,6 @@ int command_loop()
 
 int main(int argc, char const* agrv[])
 {
-  // Can set background colours by shifting background color by 4
-  //rlutil::setColor((rlutil::BLUE << 4) | rlutil::YELLOW);
-  rlutil::cls();
-
-  rlutil::setColor(rlutil::YELLOW);
-  std::cout << "Word Game Mate" << std::endl;
-  std::cout << std::endl;
-
-  command_loop();
-
   //// Create a Trie from a flat file word list
   //std::ifstream ifs_flat("C:\\Users\\clarkson\\Dropbox\\Projects\\Word Lists\\sowpods.txt");
   //if (!ifs_flat.good()) {
@@ -588,6 +553,41 @@ int main(int argc, char const* agrv[])
   // When consuming, can just consume "depth-first", because ordering doesn't matter
   // It will always return the words in alphabetical order, but that's OK because you can rearrange
   //auto results = WordFinder::Consume(h, "rankoilcans");
+
+  //// TEST 6
+  //Trie h("SOWPODS");
+  //Strings box;
+  //box.push_back("aa");
+  //Trie::read_static(kSowpodsAll, h);
+  //auto results = WordFinder::Box(
+  //  h,
+  //  box,
+  //  true
+  //  );
+  //print_results(results);
+
+  //// TEST 7
+  //Trie h("SOWPODS");
+  //Strings box;
+  //box.push_back("sna");
+  //box.push_back("sek");
+  //Trie::read_static(kSowpodsAll, h);
+  //auto results = WordFinder::Box(
+  //  h,
+  //  box,
+  //  true
+  //  );
+  //print_results(results);
+
+  // Can set background colours by shifting background color by 4
+  //rlutil::setColor((rlutil::BLUE << 4) | rlutil::YELLOW);
+  rlutil::cls();
+
+  rlutil::setColor(rlutil::YELLOW);
+  std::cout << "Word Game Mate" << std::endl;
+  std::cout << std::endl;
+
+  command_loop();
 
   return EXIT_SUCCESS;
 }
