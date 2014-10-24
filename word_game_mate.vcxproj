@@ -74,6 +74,7 @@
     <ClCompile Include="cpptrie\TrieNode.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="sowpods_all.cpp" />
+    <ClCompile Include="twl_all.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpptrie\Trie.h" />

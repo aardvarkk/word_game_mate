@@ -27,6 +27,9 @@
     <ClCompile Include="sowpods_all.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="twl_all.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpptrie\Trie.h">

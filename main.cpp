@@ -17,10 +17,12 @@
 typedef std::vector<std::string> Strings;
 typedef std::deque<Strings> Results;
 
-static const size_t kMaxResults = 8;
-static const size_t kMaxWords = 0;
+static size_t const kMaxResults = 8;
+static size_t const kMaxWords = 0;
+static char const*  kTempFile = "tmp.txt";
 
 extern unsigned char const kSowpodsAll[];
+extern unsigned char const kTwlAll[];
 
 static  std::vector<Trie*> wordlists_;
 
@@ -175,6 +177,8 @@ void draw_display()
   std::cout << "b: word box" << std::endl;
   std::cout << "c: change sort" << std::endl;
   std::cout << "s: load SOWPODS" << std::endl;
+  std::cout << "t: load TWL" << std::endl;
+  std::cout << "u: unload wordlist" << std::endl;
   std::cout << "q: quit" << std::endl;
   std::cout << std::endl;
 }
@@ -190,14 +194,38 @@ int get_wordlist()
   rlutil::setColor(rlutil::LIGHTGREEN);
 
   // Need to choose a word list if we have multiple
+  int idx = 0;
   if (wordlists_.size() > 1) {
-    std::cout << "Choose a wordlist:" << std::endl;
+    std::cout << "Choose a wordlist ";
+    size_t i = 1;
+    std::cout << "(";
+    for (auto w : wordlists_) {
+      if (i > 1) {
+        std::cout << ", ";
+      }
+      std::cout << i++ << " = " << w->get_name();
+    }
+    std::cout << "):" << std::endl;
     std::string wordlist_str;
     std::getline(std::cin, wordlist_str);
-    return std::stoi(wordlist_str);
+
+    try {
+      idx = std::stoi(wordlist_str) - 1;
+    }
+    catch (...)
+    {
+      std::cout << "Unable to parse numeric input" << std::endl;
+      return -1;
+    }
+
+    if (idx < 0 || idx >= static_cast<int>(wordlists_.size())) {
+      std::cout << "Numeric input out of range" << std::endl;
+      return -1;
+    }
   }
 
-  return 0;
+  std::cout << "Selected wordlist " << wordlists_[idx]->get_name() << std::endl;
+  return idx;
 }
 
 // Collects info on whether or not to consume all input and wordlet sizes
@@ -424,6 +452,23 @@ int command_loop()
     }
       break;
 
+    case 't':
+    {
+      auto t = new Trie("TWL");
+      Trie::read_static(kTwlAll, *t);
+      wordlists_.push_back(t);
+    }
+      break;
+
+    case 'u':
+    {
+      int idx = get_wordlist();
+      if (idx >= 0) {
+        wordlists_.erase(wordlists_.begin()+idx);
+      }
+    }
+      break;
+
     case 'q':
       quit = true;
       break;
@@ -438,32 +483,76 @@ int command_loop()
   return EXIT_SUCCESS;
 }
 
+void wordlist_to_binary(
+  std::string const& name,
+  std::string const& in_path, 
+  std::string const& out_path,
+  size_t max_words = 0
+  )
+{
+  // Create a Trie from a flat file word list
+  std::ifstream ifs(in_path);
+  if (!ifs.good()) {
+    return;
+  }
+
+  Trie t(name);
+  std::string word;
+  size_t words = 0;
+  while (std::getline(ifs, word)) {
+    if (max_words && words >= max_words) {
+      break;
+    }
+
+    t.insert(word);
+    ++words;
+  }
+
+  // Write a tree to a file
+  std::ofstream ofs(out_path, std::ios::binary);
+  if (!ofs.good()) {
+    return;
+  }
+  ofs << t;
+  ofs.close();
+}
+
+void binary_to_static(std::string const& in_path, std::string const& out_path)
+{
+  std::ofstream ofs(out_path);
+  if (!ofs.good()) {
+    return;
+  }
+  std::ifstream ifs(in_path, std::ios::binary);
+  int wrap = 8; int written = 0;
+  while (!ifs.eof()) {
+    unsigned char c;
+    ifs.read(reinterpret_cast<char*>(&c), sizeof(c));
+    std::stringstream ss;
+    ss << "0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(c) << ",";
+    ofs << ss.str();
+    if (!(++written % wrap)) {
+      ofs << std::endl;
+    }
+  }
+  ofs.close();
+}
+
+void wordlist_to_static(std::string const& name, std::string const& in_path, std::string const& out_path)
+{
+  wordlist_to_binary(name, in_path, kTempFile);
+  binary_to_static(kTempFile, out_path);
+  std::remove(kTempFile);
+}
+
 int main(int argc, char const* agrv[])
 {
-  //// Create a Trie from a flat file word list
-  //std::ifstream ifs_flat("C:\\Users\\clarkson\\Dropbox\\Projects\\Word Lists\\sowpods.txt");
-  //if (!ifs_flat.good()) {
-  //  return EXIT_FAILURE;
-  //}
-  //Trie h_flat("SOWPODS");
-  //std::string word;
-  //int words = 0;
-  //while (std::getline(ifs_flat, word)) {
-  //  if (kMaxWords && words >= kMaxWords) {
-  //    break;
-  //  }
-
-  //  h_flat.insert(word);
-  //  ++words;
-  //}
-
-  //// Write a tree to a file
-  //std::ofstream ofs("trie.bin", std::ios::binary);
-  //if (!ofs.good()) {
-  //  return EXIT_FAILURE;
-  //}
-  //ofs << h_flat;
-  //ofs.close();
+  //wordlist_to_static(
+  //  "TWL",
+  //  "TWL06.txt",
+  //  "static.txt"
+  //  );
+  //return EXIT_SUCCESS;
 
   // Recreate the trie from a file
   //Trie h("SOWPODS");
@@ -472,28 +561,6 @@ int main(int argc, char const* agrv[])
   //  return EXIT_FAILURE;
   //}
   //ifs >> h;
-
-  // Retrieve all words in a flat list
-  //WordReceiver wr(h.words);
-  //h.get_words(wr);
-
-  //// Convert to a static
-  //std::ofstream ofs_static("static.txt");
-  //if (!ofs_static.good()) {
-  //  return EXIT_FAILURE;
-  //}
-  //int wrap = 8; int written = 0;
-  //while (!ifs.eof()) {
-  //  unsigned char c;
-  //  ifs.read(reinterpret_cast<char*>(&c), sizeof(c));
-  //  std::stringstream ss;
-  //  ss << "0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(c) << ",";
-  //  ofs_static << ss.str();
-  //  if (!(++written % wrap)) {
-  //    ofs_static << std::endl;
-  //  }
-  //}
-  //ofs_static.close();
 
   // Recreate the trie from a static
   //Trie h;
