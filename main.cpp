@@ -230,12 +230,12 @@ void draw_display()
 int get_wordlist()
 {
   if (wordlists_.empty()) {
-    rlutil::setColor(rlutil::LIGHTRED);
+    rlutil::setColor(rlutil::LIGHTMAGENTA);
     std::cout << "No wordlists loaded!" << std::endl;
     return -1;
   }
 
-  rlutil::setColor(rlutil::LIGHTGREEN);
+  rlutil::setColor(rlutil::LIGHTCYAN);
 
   // Need to choose a word list if we have multiple
   int idx = 0;
@@ -268,7 +268,6 @@ int get_wordlist()
     }
   }
 
-  std::cout << "Selected wordlist " << wordlists_[idx]->get_name() << std::endl;
   return idx;
 }
 
@@ -343,7 +342,7 @@ Results command_box(Trie const& wordlist)
 
     // Check that the letters we're adding match length of existing
     if (box.size() > 0 && letter_str.length() != box.back().length()) {
-      rlutil::setColor(rlutil::LIGHTRED);
+      rlutil::setColor(rlutil::LIGHTMAGENTA);
       std::cout << "Box line length doesn't match previous" << std::endl << std::endl;
       return Results();
     }
