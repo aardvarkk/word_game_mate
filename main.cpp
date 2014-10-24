@@ -17,14 +17,24 @@
 typedef std::vector<std::string> Strings;
 typedef std::deque<Strings> Results;
 
-static size_t const kMaxResults = 8;
-static size_t const kMaxWords = 0;
+static size_t const kMaxWords = 0; // Used only when loading flat word lists for debug
 static char const*  kTempFile = "tmp.txt";
 
 extern unsigned char const kSowpodsAll[];
 extern unsigned char const kTwlAll[];
 
-static  std::vector<Trie*> wordlists_;
+static std::vector<Trie*> wordlists_;
+
+enum DisplayMethod
+{
+  kCommaSeparated = 0,
+  kLine,
+  kNumDisplayMethods
+};
+
+static DisplayMethod display_method_ = kCommaSeparated;
+
+static size_t max_results_ = 50;
 
 enum SortMethod
 {
@@ -88,6 +98,14 @@ public:
 
     return t.box(box, consume_all, min_wordlet, max_wordlet);
   }
+
+  static bool IsWord(
+    Trie const& t,
+    std::string const& word
+    )
+  {
+    return t.search(word, word.length()).size() > 0;
+  }
 };
 
 class StringUtils
@@ -139,48 +157,74 @@ std::string SortMethodString(SortMethod sort_method)
   }
 }
 
+std::string DisplayMethodString(DisplayMethod display_method)
+{
+  switch (display_method) {
+  case kLine:
+    return "One Word Per Line";
+  case kCommaSeparated:
+    return "Comma Separated";
+  default:
+    return "Unknown";
+  }
+}
+
 void draw_display()
 {
-  rlutil::setColor(rlutil::WHITE);
-  std::cout << "Loaded Word Lists:" << std::endl;
+  rlutil::setColor(rlutil::GREY);
+  std::cout << "Loaded Word Lists: ";
+  rlutil::setColor(rlutil::CYAN);
   if (wordlists_.empty()) {
-    std::cout << "None" << std::endl;
+    std::cout << "None";
   }
   else {
     for (size_t i = 0; i < wordlists_.size(); ++i) {
-      std::cout << i + 1 << ". " << wordlists_[i]->get_name() << std::endl;
+      if (i > 0) {
+        rlutil::setColor(rlutil::GREY);
+        std::cout << ", ";
+        rlutil::setColor(rlutil::CYAN);
+      }
+      std::cout << wordlists_[i]->get_name();
     }
   }
   std::cout << std::endl;
 
-  rlutil::setColor(rlutil::LIGHTBLUE);
+  rlutil::setColor(rlutil::GREY);
   std::cout << "Sort Method: ";
   for (int i = 0; i < kNumSortMethods; ++i) {
-    if (static_cast<int>(sort_method_) == i) {
-      rlutil::setColor(rlutil::WHITE);
-      std::cout << SortMethodString(static_cast<SortMethod>(i));
-    }
-    else {
-      rlutil::setColor(rlutil::LIGHTBLUE);
-      std::cout << SortMethodString(static_cast<SortMethod>(i));
-    }
+    rlutil::setColor(static_cast<int>(sort_method_) == i ? rlutil::CYAN : rlutil::GREY);
+    std::cout << SortMethodString(static_cast<SortMethod>(i));
     if (i < kNumSortMethods - 1) {
-      rlutil::setColor(rlutil::LIGHTBLUE);
+      rlutil::setColor(rlutil::GREY);
       std::cout << " | ";
     }
   }
-  std::cout << std::endl << std::endl;
+  std::cout << std::endl;
+  
+  rlutil::setColor(rlutil::GREY);
+  std::cout << "Display Method: ";
+  for (int i = 0; i < kNumDisplayMethods; ++i) {
+    rlutil::setColor(static_cast<int>(display_method_) == i ? rlutil::CYAN : rlutil::GREY);
+    std::cout << DisplayMethodString(static_cast<DisplayMethod>(i));
+    if (i < kNumDisplayMethods - 1) {
+      rlutil::setColor(rlutil::GREY);
+      std::cout << " | ";
+    }
+  }
+  std::cout << std::endl;
 
+  std::cout << std::endl;
   rlutil::setColor(rlutil::LIGHTCYAN);
-  std::cout << "Commands:" << std::endl;
   std::cout << "a: anagram" << std::endl;
   std::cout << "b: word box" << std::endl;
   std::cout << "c: change sort" << std::endl;
+  std::cout << "d: change display" << std::endl;
+  std::cout << "i: is ___ a word?" << std::endl;
   std::cout << "s: load SOWPODS" << std::endl;
   std::cout << "t: load TWL" << std::endl;
   std::cout << "u: unload wordlist" << std::endl;
-  std::cout << "q: quit" << std::endl;
-  std::cout << std::endl;
+  std::cout << "q: quit";
+  rlutil::hidecursor();
 }
 
 int get_wordlist()
@@ -240,7 +284,7 @@ void command_common(size_t input_size, bool& consume_all, size_t& min_wordlet, s
   min_wordlet = 2;
   max_wordlet = input_size;
 
-  std::cout << "Enter minimum wordlet size (default = " << min_wordlet << "):" << std::endl;
+  std::cout << "Enter minimum wordlet size (default = " << min_wordlet << ", input length = " << input_size << "):" << std::endl;
   std::string min_wordlet_str;
   std::getline(std::cin, min_wordlet_str);
   try {
@@ -249,7 +293,7 @@ void command_common(size_t input_size, bool& consume_all, size_t& min_wordlet, s
   catch (...) {
   }
 
-  std::cout << "Enter maximum wordlet size (default = " << max_wordlet << "):" << std::endl;
+  std::cout << "Enter maximum wordlet size (default = " << max_wordlet << ", input length = " << input_size << "):" << std::endl;
   std::string max_wordlet_str;
   std::getline(std::cin, max_wordlet_str);
   try {
@@ -325,6 +369,22 @@ Results command_box(Trie const& wordlist)
   return WordFinder::Box(wordlist, box, consume_all, &min_wordlet, &max_wordlet);
 }
 
+void command_is_word(Trie const& wordlist)
+{
+  std::cout << "Enter a word to check:" << std::endl;
+  std::string line;
+  std::getline(std::cin, line);
+
+  bool isword = WordFinder::IsWord(wordlist, line);
+  if (isword) {
+    std::cout << "Yes, '" << line << "' is a word";
+  }
+  else {
+    std::cout << "Sorry, '" << line << "' is not a word";
+  }
+  std::cout << " in the " << wordlist.get_name() << " wordlist" << std::endl;
+}
+
 Results sort_results(Results const& unsorted)
 {
   auto sorted = unsorted;
@@ -380,25 +440,67 @@ Results sort_results(Results const& unsorted)
 
 void print_results(Results const& results)
 {
-  rlutil::setColor(rlutil::LIGHTMAGENTA);
-
   if (results.empty()) {
+    rlutil::setColor(rlutil::LIGHTMAGENTA);
     std::cout << "No results" << std::endl << std::endl;
     return;
   }
 
-  if (results.size() > kMaxResults) {
-    std::cout << "Displaying top " << kMaxResults << " of " << results.size() << " results:" << std::endl;
+  rlutil::setColor(rlutil::GREY);
+  if (results.size() > max_results_) {
+    std::cout << "Displaying top " << max_results_ << " of " << results.size() << " results:" << std::endl;
   }
   else {
     std::cout << "Results:" << std::endl;
   }
 
-  for (size_t i = 0; i < std::min(results.size(), kMaxResults); ++i) {
-    for (auto w : results[i]) {
-      std::cout << w << " ";
+  rlutil::setColor(rlutil::LIGHTMAGENTA);
+  switch (display_method_) {
+  
+  case kLine:
+    for (size_t i = 0; i < std::min(results.size(), max_results_); ++i) {
+      for (auto w : results[i]) {
+        std::cout << w << " ";
+      }
+      std::cout << std::endl;
+    }
+    break;
+
+  case kCommaSeparated:
+  {
+    auto cols = rlutil::tcols();
+    size_t pos = 0;
+    auto num_write = std::min(results.size(), max_results_);
+    for (size_t i = 0; i < num_write; ++i) {
+      
+      // Generate string to write
+      std::stringstream to_write;
+      for (size_t j = 0; j < results[i].size(); ++j) {
+        if (j > 0) {
+          to_write << " ";
+        }
+        to_write << results[i][j];
+      }
+
+      // Add a comma if we have more results to write
+      if (i < num_write-1) {
+        to_write << ", ";
+      }
+
+      // New line if required
+      if (pos + to_write.str().length() >= static_cast<size_t>(cols)) {
+        std::cout << std::endl;
+        pos = 0;
+      }
+
+      // If we have enough room, write it
+      std::cout << to_write.str();
+      pos += to_write.str().length();
     }
     std::cout << std::endl;
+  }
+    break;
+
   }
   std::cout << std::endl;
 }
@@ -442,6 +544,20 @@ int command_loop()
 
     case 'c':
       sort_method_ = static_cast<SortMethod>((static_cast<int>(sort_method_)+1)%kNumSortMethods);
+      break;
+
+    case 'd':
+      display_method_ = static_cast<DisplayMethod>(!static_cast<int>(display_method_));
+      break;
+
+    case 'i':
+    {
+      auto wl_idx = get_wordlist();
+      if (wl_idx < 0) {
+        break;
+      }
+      command_is_word(*wordlists_[wl_idx]);
+    }
       break;
 
     case 's':
