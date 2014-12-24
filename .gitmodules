@@ -1,0 +1,6 @@
+[submodule "cpptrie"]
+	path = cpptrie
+	url = git@github.com:aardvarkk/cpptrie
+[submodule "rlutil"]
+	path = rlutil
+	url = git@github.com:aardvarkk/rlutil
