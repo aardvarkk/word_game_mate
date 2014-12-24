@@ -104,7 +104,8 @@ public:
     std::string const& word
     )
   {
-    return t.search(word, word.length()).size() > 0;
+    auto results = t.search(word, word.length());
+    return results.size() > 0 && results.front() == word;
   }
 };
 
