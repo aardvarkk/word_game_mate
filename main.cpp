@@ -11,11 +11,12 @@
 
 #define NOMINMAX
 #include "rlutil/rlutil.h"
+using namespace rlutil;
 
 #include "Trie.h"
 
-typedef std::vector<std::string> Strings;
-typedef std::deque<Strings> Results;
+typedef vector<string> Strings;
+typedef deque<Strings> Results;
 
 static size_t const kMaxWords = 0; // Used only when loading flat word lists for debug
 static char const*  kTempFile = "tmp.txt";
@@ -23,7 +24,7 @@ static char const*  kTempFile = "tmp.txt";
 extern unsigned char const kSowpodsAll[];
 extern unsigned char const kTwlAll[];
 
-static std::vector<Trie*> wordlists_;
+static vector<Trie*> wordlists_;
 
 enum DisplayMethod
 {
@@ -49,7 +50,7 @@ static SortMethod sort_method_ = kLongestWord;
 class WordFinder
 {
 public:
-  static std::deque<std::string> StartsWith(Trie const& t, std::string const& str)
+  static deque<string> StartsWith(Trie const& t, string const& str)
   {
     return t.search(str);
   }
@@ -59,7 +60,7 @@ public:
   // Will take into account min and max word lengths for sub-words
   static Results Anagrams(
     Trie const& t,
-    std::string const& str,
+    string const& str,
     bool consume_all = true,
     size_t* min_wordlet = nullptr,
     size_t* max_wordlet = nullptr
@@ -67,10 +68,10 @@ public:
   {
     // Adjust ranges for validity
     if (min_wordlet) {
-      *min_wordlet = std::max<size_t>(*min_wordlet, 1);
+      *min_wordlet = max<size_t>(*min_wordlet, 1);
     }
     if (max_wordlet) {
-      *max_wordlet = std::min<size_t>(*max_wordlet, str.size());
+      *max_wordlet = min<size_t>(*max_wordlet, str.size());
     }
 
     return t.anagrams(str, consume_all, min_wordlet, max_wordlet);
@@ -90,10 +91,10 @@ public:
 
     // Adjust ranges for validity
     if (min_wordlet) {
-      *min_wordlet = std::max<size_t>(*min_wordlet, 1);
+      *min_wordlet = max<size_t>(*min_wordlet, 1);
     }
     if (max_wordlet) {
-      *max_wordlet = std::min<size_t>(*max_wordlet, box.size() * box.front().size());
+      *max_wordlet = min<size_t>(*max_wordlet, box.size() * box.front().size());
     }
 
     return t.box(box, consume_all, min_wordlet, max_wordlet);
@@ -101,7 +102,7 @@ public:
 
   static bool IsWord(
     Trie const& t,
-    std::string const& word
+    string const& word
     )
   {
     auto results = t.search(word, word.length());
@@ -112,7 +113,7 @@ public:
 class StringUtils
 {
 public:
-  static inline int compare_prioritize_length(std::string const& a, std::string const& b)
+  static inline int compare_prioritize_length(string const& a, string const& b)
   {
     if (a.size() > b.size()) {
       return 1;
@@ -128,9 +129,9 @@ public:
   static inline int compare_wordsets(Strings const& a, Strings const& b) {
     // Sort each wordset
     auto sorted_a = a;
-    std::sort(sorted_a.begin(), sorted_a.end(), [](std::string const& a, std::string const& b) -> bool { return StringUtils::compare_prioritize_length(a, b) > 0; });
+    sort(sorted_a.begin(), sorted_a.end(), [](string const& a, string const& b) -> bool { return StringUtils::compare_prioritize_length(a, b) > 0; });
     auto sorted_b = b;
-    std::sort(sorted_b.begin(), sorted_b.end(), [](std::string const& a, std::string const& b) -> bool { return StringUtils::compare_prioritize_length(a, b) > 0; });
+    sort(sorted_b.begin(), sorted_b.end(), [](string const& a, string const& b) -> bool { return StringUtils::compare_prioritize_length(a, b) > 0; });
 
     // Go through each wordset, starting at the top
     // Keep descending until we find a difference...
@@ -144,7 +145,7 @@ public:
   }
 };
 
-std::string SortMethodString(SortMethod sort_method)
+string SortMethodString(SortMethod sort_method)
 {
   switch (sort_method) {
   case kLongestWord:
@@ -158,7 +159,7 @@ std::string SortMethodString(SortMethod sort_method)
   }
 }
 
-std::string DisplayMethodString(DisplayMethod display_method)
+string DisplayMethodString(DisplayMethod display_method)
 {
   switch (display_method) {
   case kLine:
@@ -172,99 +173,99 @@ std::string DisplayMethodString(DisplayMethod display_method)
 
 void draw_display()
 {
-  rlutil::setColor(rlutil::GREY);
-  std::cout << "Loaded Word Lists: ";
-  rlutil::setColor(rlutil::CYAN);
+  setColor(GREY);
+  cout << "Loaded Word Lists: ";
+  setColor(CYAN);
   if (wordlists_.empty()) {
-    std::cout << "None";
+    cout << "None";
   }
   else {
     for (size_t i = 0; i < wordlists_.size(); ++i) {
       if (i > 0) {
-        rlutil::setColor(rlutil::GREY);
-        std::cout << ", ";
-        rlutil::setColor(rlutil::CYAN);
+        setColor(GREY);
+        cout << ", ";
+        setColor(CYAN);
       }
-      std::cout << wordlists_[i]->get_name();
+      cout << wordlists_[i]->get_name();
     }
   }
-  std::cout << std::endl;
+  cout << endl;
 
-  rlutil::setColor(rlutil::GREY);
-  std::cout << "Sort Method: ";
+  setColor(GREY);
+  cout << "Sort Method: ";
   for (int i = 0; i < kNumSortMethods; ++i) {
-    rlutil::setColor(static_cast<int>(sort_method_) == i ? rlutil::CYAN : rlutil::GREY);
-    std::cout << SortMethodString(static_cast<SortMethod>(i));
+    setColor(static_cast<int>(sort_method_) == i ? CYAN : GREY);
+    cout << SortMethodString(static_cast<SortMethod>(i));
     if (i < kNumSortMethods - 1) {
-      rlutil::setColor(rlutil::GREY);
-      std::cout << " | ";
+      setColor(GREY);
+      cout << " | ";
     }
   }
-  std::cout << std::endl;
+  cout << endl;
   
-  rlutil::setColor(rlutil::GREY);
-  std::cout << "Display Method: ";
+  setColor(GREY);
+  cout << "Display Method: ";
   for (int i = 0; i < kNumDisplayMethods; ++i) {
-    rlutil::setColor(static_cast<int>(display_method_) == i ? rlutil::CYAN : rlutil::GREY);
-    std::cout << DisplayMethodString(static_cast<DisplayMethod>(i));
+    setColor(static_cast<int>(display_method_) == i ? CYAN : GREY);
+    cout << DisplayMethodString(static_cast<DisplayMethod>(i));
     if (i < kNumDisplayMethods - 1) {
-      rlutil::setColor(rlutil::GREY);
-      std::cout << " | ";
+      setColor(GREY);
+      cout << " | ";
     }
   }
-  std::cout << std::endl;
+  cout << endl;
 
-  std::cout << std::endl;
-  rlutil::setColor(rlutil::LIGHTCYAN);
-  std::cout << "a: anagram" << std::endl;
-  std::cout << "b: word box" << std::endl;
-  std::cout << "c: change sort" << std::endl;
-  std::cout << "d: change display" << std::endl;
-  std::cout << "i: is ___ a word?" << std::endl;
-  std::cout << "s: load SOWPODS" << std::endl;
-  std::cout << "t: load TWL" << std::endl;
-  std::cout << "u: unload wordlist" << std::endl;
-  std::cout << "q: quit";
-  rlutil::hidecursor();
+  cout << endl;
+  setColor(BLUE);
+  cout << "a: anagram" << endl;
+  cout << "b: word box" << endl;
+  cout << "c: change sort" << endl;
+  cout << "d: change display" << endl;
+  cout << "i: is ___ a word?" << endl;
+  cout << "s: load SOWPODS" << endl;
+  cout << "t: load TWL" << endl;
+  cout << "u: unload wordlist" << endl;
+  cout << "q: quit";
+  hidecursor();
 }
 
 int get_wordlist()
 {
   if (wordlists_.empty()) {
-    rlutil::setColor(rlutil::LIGHTMAGENTA);
-    std::cout << "No wordlists loaded!" << std::endl;
+    setColor(LIGHTMAGENTA);
+    cout << "No wordlists loaded!" << endl;
     return -1;
   }
 
-  rlutil::setColor(rlutil::LIGHTCYAN);
+  setColor(LIGHTCYAN);
 
   // Need to choose a word list if we have multiple
   int idx = 0;
   if (wordlists_.size() > 1) {
-    std::cout << "Choose a wordlist ";
+    cout << "Choose a wordlist ";
     size_t i = 1;
-    std::cout << "(";
+    cout << "(";
     for (auto w : wordlists_) {
       if (i > 1) {
-        std::cout << ", ";
+        cout << ", ";
       }
-      std::cout << i++ << " = " << w->get_name();
+      cout << i++ << " = " << w->get_name();
     }
-    std::cout << "):" << std::endl;
-    std::string wordlist_str;
-    std::getline(std::cin, wordlist_str);
+    cout << "):" << endl;
+    string wordlist_str;
+    getline(cin, wordlist_str);
 
     try {
-      idx = std::stoi(wordlist_str) - 1;
+      idx = stoi(wordlist_str) - 1;
     }
     catch (...)
     {
-      std::cout << "Unable to parse numeric input" << std::endl;
+      cout << "Unable to parse numeric input" << endl;
       return -1;
     }
 
     if (idx < 0 || idx >= static_cast<int>(wordlists_.size())) {
-      std::cout << "Numeric input out of range" << std::endl;
+      cout << "Numeric input out of range" << endl;
       return -1;
     }
   }
@@ -275,29 +276,29 @@ int get_wordlist()
 // Collects info on whether or not to consume all input and wordlet sizes
 void command_common(size_t input_size, bool& consume_all, size_t& min_wordlet, size_t& max_wordlet)
 {
-  std::cout << "Consume all (y/n, default = y):" << std::endl;
-  std::string consume_all_str;
-  std::getline(std::cin, consume_all_str);
-  consume_all = !(!consume_all_str.empty() && std::tolower(consume_all_str[0]) == 'n');
+  cout << "Consume all (y/n, default = y):" << endl;
+  string consume_all_str;
+  getline(cin, consume_all_str);
+  consume_all = !(!consume_all_str.empty() && tolower(consume_all_str[0]) == 'n');
 
   // Set default wordlet sizes
   min_wordlet = 2;
   max_wordlet = input_size;
 
-  std::cout << "Enter minimum wordlet size (default = " << min_wordlet << ", input length = " << input_size << "):" << std::endl;
-  std::string min_wordlet_str;
-  std::getline(std::cin, min_wordlet_str);
+  cout << "Enter minimum wordlet size (default = " << min_wordlet << ", input length = " << input_size << "):" << endl;
+  string min_wordlet_str;
+  getline(cin, min_wordlet_str);
   try {
-    min_wordlet = std::stoul(min_wordlet_str);
+    min_wordlet = stoul(min_wordlet_str);
   }
   catch (...) {
   }
 
-  std::cout << "Enter maximum wordlet size (default = " << max_wordlet << ", input length = " << input_size << "):" << std::endl;
-  std::string max_wordlet_str;
-  std::getline(std::cin, max_wordlet_str);
+  cout << "Enter maximum wordlet size (default = " << max_wordlet << ", input length = " << input_size << "):" << endl;
+  string max_wordlet_str;
+  getline(cin, max_wordlet_str);
   try {
-    max_wordlet = std::stoul(max_wordlet_str);
+    max_wordlet = stoul(max_wordlet_str);
   }
   catch (...) {
   }
@@ -305,9 +306,9 @@ void command_common(size_t input_size, bool& consume_all, size_t& min_wordlet, s
 
 Results command_anagram(Trie const& wordlist)
 {
-  std::cout << "Enter letters:" << std::endl;
-  std::string letters;
-  std::getline(std::cin, letters);
+  cout << "Enter letters:" << endl;
+  string letters;
+  getline(cin, letters);
 
   bool consume_all;
   size_t min_wordlet, max_wordlet;
@@ -324,14 +325,14 @@ Results command_anagram(Trie const& wordlist)
 
 Results command_box(Trie const& wordlist)
 {
-  std::cout << "Enter box (finish lines with ';'):" << std::endl;
+  cout << "Enter box (finish lines with ';'):" << endl;
   Strings box;
   for (;;) {
-    std::string line;
-    std::getline(std::cin, line);
+    string line;
+    getline(cin, line);
 
     // The letters to add
-    std::string letter_str = line;
+    string letter_str = line;
 
     // We've added a new line
     bool add_more = !line.empty() && line.back() == ';';
@@ -343,8 +344,8 @@ Results command_box(Trie const& wordlist)
 
     // Check that the letters we're adding match length of existing
     if (box.size() > 0 && letter_str.length() != box.back().length()) {
-      rlutil::setColor(rlutil::LIGHTMAGENTA);
-      std::cout << "Box line length doesn't match previous" << std::endl << std::endl;
+      setColor(LIGHTMAGENTA);
+      cout << "Box line length doesn't match previous" << endl << endl;
       return Results();
     }
 
@@ -371,18 +372,18 @@ Results command_box(Trie const& wordlist)
 
 void command_is_word(Trie const& wordlist)
 {
-  std::cout << "Enter a word to check:" << std::endl;
-  std::string line;
-  std::getline(std::cin, line);
+  cout << "Enter a word to check:" << endl;
+  string line;
+  getline(cin, line);
 
   bool isword = WordFinder::IsWord(wordlist, line);
   if (isword) {
-    std::cout << "Yes, '" << line << "' is a word";
+    cout << "Yes, '" << line << "' is a word";
   }
   else {
-    std::cout << "Sorry, '" << line << "' is not a word";
+    cout << "Sorry, '" << line << "' is not a word";
   }
-  std::cout << " in the " << wordlist.get_name() << " wordlist" << std::endl;
+  cout << " in the " << wordlist.get_name() << " wordlist" << endl;
 }
 
 Results sort_results(Results const& unsorted)
@@ -394,7 +395,7 @@ Results sort_results(Results const& unsorted)
     // Sort by longest word
   case kLongestWord:
   {
-    std::sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+    sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
     {
       return StringUtils::compare_wordsets(a, b) > 0;
     });
@@ -404,7 +405,7 @@ Results sort_results(Results const& unsorted)
     // Sort by most words
   case kMostWords:
   {
-    std::sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+    sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
     {
       if (a.size() != b.size()) {
         return a.size() > b.size();
@@ -420,7 +421,7 @@ Results sort_results(Results const& unsorted)
     // Sort by fewest words
   case kFewestWords:
   {
-    std::sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+    sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
     {
       if (a.size() != b.size()) {
         return a.size() < b.size();
@@ -441,40 +442,40 @@ Results sort_results(Results const& unsorted)
 void print_results(Results const& results)
 {
   if (results.empty()) {
-    rlutil::setColor(rlutil::LIGHTMAGENTA);
-    std::cout << "No results" << std::endl << std::endl;
+    setColor(LIGHTMAGENTA);
+    cout << "No results" << endl << endl;
     return;
   }
 
-  rlutil::setColor(rlutil::GREY);
+  setColor(GREY);
   if (results.size() > max_results_) {
-    std::cout << "Displaying top " << max_results_ << " of " << results.size() << " results:" << std::endl;
+    cout << "Displaying top " << max_results_ << " of " << results.size() << " results:" << endl;
   }
   else {
-    std::cout << "Results:" << std::endl;
+    cout << "Results:" << endl;
   }
 
-  rlutil::setColor(rlutil::LIGHTMAGENTA);
+  setColor(LIGHTMAGENTA);
   switch (display_method_) {
   
   case kLine:
-    for (size_t i = 0; i < std::min(results.size(), max_results_); ++i) {
+    for (size_t i = 0; i < min(results.size(), max_results_); ++i) {
       for (auto w : results[i]) {
-        std::cout << w << " ";
+        cout << w << " ";
       }
-      std::cout << std::endl;
+      cout << endl;
     }
     break;
 
   case kCommaSeparated:
   {
-    auto cols = rlutil::tcols();
+    auto cols = tcols();
     size_t pos = 0;
-    auto num_write = std::min(results.size(), max_results_);
+    auto num_write = min(results.size(), max_results_);
     for (size_t i = 0; i < num_write; ++i) {
       
       // Generate string to write
-      std::stringstream to_write;
+      stringstream to_write;
       for (size_t j = 0; j < results[i].size(); ++j) {
         if (j > 0) {
           to_write << " ";
@@ -489,20 +490,20 @@ void print_results(Results const& results)
 
       // New line if required
       if (pos + to_write.str().length() >= static_cast<size_t>(cols)) {
-        std::cout << std::endl;
+        cout << endl;
         pos = 0;
       }
 
       // If we have enough room, write it
-      std::cout << to_write.str();
+      cout << to_write.str();
       pos += to_write.str().length();
     }
-    std::cout << std::endl;
+    cout << endl;
   }
     break;
 
   }
-  std::cout << std::endl;
+  cout << endl;
 }
 
 int command_loop()
@@ -513,8 +514,8 @@ int command_loop()
     draw_display();
     
     // Wait for a keypress, and clear once we've received it
-    auto key = rlutil::getkey();
-    rlutil::cls();
+    auto key = getkey();
+    cls();
 
     switch (tolower(key)) {
 
@@ -596,26 +597,28 @@ int command_loop()
     delete wl;
   }
 
+  resetColor();
+
   return EXIT_SUCCESS;
 }
 
 void wordlist_to_binary(
-  std::string const& name,
-  std::string const& in_path, 
-  std::string const& out_path,
+  string const& name,
+  string const& in_path, 
+  string const& out_path,
   size_t max_words = 0
   )
 {
   // Create a Trie from a flat file word list
-  std::ifstream ifs(in_path);
+  ifstream ifs(in_path);
   if (!ifs.good()) {
     return;
   }
 
   Trie t(name);
-  std::string word;
+  string word;
   size_t words = 0;
-  while (std::getline(ifs, word)) {
+  while (getline(ifs, word)) {
     if (max_words && words >= max_words) {
       break;
     }
@@ -625,7 +628,7 @@ void wordlist_to_binary(
   }
 
   // Write a tree to a file
-  std::ofstream ofs(out_path, std::ios::binary);
+  ofstream ofs(out_path, ios::binary);
   if (!ofs.good()) {
     return;
   }
@@ -633,32 +636,32 @@ void wordlist_to_binary(
   ofs.close();
 }
 
-void binary_to_static(std::string const& in_path, std::string const& out_path)
+void binary_to_static(string const& in_path, string const& out_path)
 {
-  std::ofstream ofs(out_path);
+  ofstream ofs(out_path);
   if (!ofs.good()) {
     return;
   }
-  std::ifstream ifs(in_path, std::ios::binary);
+  ifstream ifs(in_path, ios::binary);
   int wrap = 8; int written = 0;
   while (!ifs.eof()) {
     unsigned char c;
     ifs.read(reinterpret_cast<char*>(&c), sizeof(c));
-    std::stringstream ss;
-    ss << "0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(c) << ",";
+    stringstream ss;
+    ss << "0x" << setfill('0') << setw(2) << hex << static_cast<int>(c) << ",";
     ofs << ss.str();
     if (!(++written % wrap)) {
-      ofs << std::endl;
+      ofs << endl;
     }
   }
   ofs.close();
 }
 
-void wordlist_to_static(std::string const& name, std::string const& in_path, std::string const& out_path)
+void wordlist_to_static(string const& name, string const& in_path, string const& out_path)
 {
   wordlist_to_binary(name, in_path, kTempFile);
   binary_to_static(kTempFile, out_path);
-  std::remove(kTempFile);
+  remove(kTempFile);
 }
 
 int main(int argc, char const* agrv[])
@@ -672,7 +675,7 @@ int main(int argc, char const* agrv[])
 
   // Recreate the trie from a file
   //Trie h("SOWPODS");
-  //std::ifstream ifs("trie.bin", std::ios::binary);
+  //ifstream ifs("trie.bin", ios::binary);
   //if (!ifs.good()) {
   //  return EXIT_FAILURE;
   //}
@@ -687,9 +690,9 @@ int main(int argc, char const* agrv[])
   //auto results = WordFinder::Anagrams(h, "hithere", 6);
   //for (auto r : results) {
   //  for (auto w : r) {
-  //    std::cout << w << " ";
+  //    cout << w << " ";
   //  }
-  //  std::cout << std::endl;
+  //  cout << endl;
   //}
 
   //auto results = WordFinder::StartsWith(h, "aba");
@@ -763,12 +766,12 @@ int main(int argc, char const* agrv[])
   //print_results(results);
 
   // Can set background colours by shifting background color by 4
-  //rlutil::setColor((rlutil::BLUE << 4) | rlutil::YELLOW);
-  rlutil::cls();
+  //setColor((BLUE << 4) | YELLOW);
+  cls();
 
-  rlutil::setColor(rlutil::YELLOW);
-  std::cout << "Word Game Mate" << std::endl;
-  std::cout << std::endl;
+  setColor(BLUE);
+  cout << "Word Game Mate" << endl;
+  cout << endl;
 
   command_loop();
 
