@@ -11,18 +11,17 @@
 
 #define NOMINMAX
 #include "rlutil/rlutil.h"
-using namespace rlutil;
 
 #include "Trie.h"
 
-typedef vector<string> Strings;
-typedef deque<Strings> Results;
+#include "word_finder.h"
+#include "string_utils.h"
+#include "tests.h"
+
+using namespace rlutil;
 
 static size_t const kMaxWords = 0; // Used only when loading flat word lists for debug
 static char const*  kTempFile = "tmp.txt";
-
-extern unsigned char const kSowpodsAll[];
-extern unsigned char const kTwlAll[];
 
 static vector<Trie*> wordlists_;
 
@@ -46,104 +45,6 @@ enum SortMethod
 };
 
 static SortMethod sort_method_ = kLongestWord;
-
-class WordFinder
-{
-public:
-  static deque<string> StartsWith(Trie const& t, string const& str)
-  {
-    return t.search(str);
-  }
-
-  // Take the source string and make words from it
-  // Will create multiple words if possible
-  // Will take into account min and max word lengths for sub-words
-  static Results Anagrams(
-    Trie const& t,
-    string const& str,
-    bool consume_all = true,
-    size_t* min_wordlet = nullptr,
-    size_t* max_wordlet = nullptr
-    )
-  {
-    // Adjust ranges for validity
-    if (min_wordlet) {
-      *min_wordlet = max<size_t>(*min_wordlet, 1);
-    }
-    if (max_wordlet) {
-      *max_wordlet = min<size_t>(*max_wordlet, str.size());
-    }
-
-    return t.anagrams(str, consume_all, min_wordlet, max_wordlet);
-  }
-
-  static Results Box(
-    Trie const& t,
-    Strings const& box,
-    bool consume_all,
-    size_t* min_wordlet = nullptr,
-    size_t* max_wordlet = nullptr
-    )
-  {
-    if (box.empty() || box.front().empty()) {
-      return Results();
-    }
-
-    // Adjust ranges for validity
-    if (min_wordlet) {
-      *min_wordlet = max<size_t>(*min_wordlet, 1);
-    }
-    if (max_wordlet) {
-      *max_wordlet = min<size_t>(*max_wordlet, box.size() * box.front().size());
-    }
-
-    return t.box(box, consume_all, min_wordlet, max_wordlet);
-  }
-
-  static bool IsWord(
-    Trie const& t,
-    string const& word
-    )
-  {
-    auto results = t.search(word, word.length());
-    return results.size() > 0 && results.front() == word;
-  }
-};
-
-class StringUtils
-{
-public:
-  static inline int compare_prioritize_length(string const& a, string const& b)
-  {
-    if (a.size() > b.size()) {
-      return 1;
-    }
-    else if (a.size() < b.size()) {
-      return -1;
-    }
-    else {
-      return a.compare(b);
-    }
-  }
-
-  static inline int compare_wordsets(Strings const& a, Strings const& b) {
-    // Sort each wordset
-    auto sorted_a = a;
-    sort(sorted_a.begin(), sorted_a.end(), [](string const& a, string const& b) -> bool { return StringUtils::compare_prioritize_length(a, b) > 0; });
-    auto sorted_b = b;
-    sort(sorted_b.begin(), sorted_b.end(), [](string const& a, string const& b) -> bool { return StringUtils::compare_prioritize_length(a, b) > 0; });
-
-    // Go through each wordset, starting at the top
-    // Keep descending until we find a difference...
-    auto a_it = sorted_a.begin();
-    auto b_it = sorted_b.begin();
-    while (StringUtils::compare_prioritize_length(*a_it, *b_it) == 0) {
-      ++a_it;
-      ++b_it;
-    }
-    return StringUtils::compare_prioritize_length(*a_it, *b_it) > 0;
-  }
-};
 
 string SortMethodString(SortMethod sort_method)
 {
@@ -685,86 +586,8 @@ int main(int argc, char const* agrv[])
   //Trie h;
   //Trie::read_static(kSowpodsAll, h);
 
-  // Can specify an exact number of letters to search for
-  // If we want to search for a range, could just run this search multiple times (once for each value in the range)
-  //auto results = WordFinder::Anagrams(h, "hithere", 6);
-  //for (auto r : results) {
-  //  for (auto w : r) {
-  //    cout << w << " ";
-  //  }
-  //  cout << endl;
-  //}
-
-  //auto results = WordFinder::StartsWith(h, "aba");
-  //auto results = WordFinder::StartsWith(h, "");
-
-  // TEST 1
-  //Trie h;
-  //h.insert("hi");
-  //h.insert("ma");
-  //auto results = WordFinder::Consume(h, "ahim");
-
-  // TEST 2
-  //Trie h;
-  //h.insert("aa");
-  //h.insert("abac");
-  //auto results = WordFinder::Consume(h, "abac");
-
-  //// TEST 3
-  //Trie h;
-  //h.insert("ae");
-  //h.insert("nirl");
-  //h.insert("st");
-  //auto results = WordFinder::Consume(h, "starline");
-
-  //// TEST 4
-  //Trie h;
-  //h.insert("airlock");
-  //h.insert("airlocks");
-  //h.insert("nan");
-  //h.insert("nans");
-  //h.insert("ann");
-  //h.insert("anns");
-  //auto results = WordFinder::Consume(h, "nacakirosln");
-
-  // TEST 5
-  //assert(StringUtils::compare_prioritize_length("a", "b") < 0);
-  //assert(StringUtils::compare_prioritize_length("aa", "b") > 0);
-  //assert(StringUtils::compare_prioritize_length("aa", "aa") == 0);
-  //assert(StringUtils::compare_prioritize_length("b", "a") > 0);
-  //assert(StringUtils::compare_prioritize_length("aa", "ab") < 0);
-  //assert(StringUtils::compare_prioritize_length("alky", "red") > 0);
-  //assert(StringUtils::compare_prioritize_length("nib", "red") < 0);
-
-  // When consuming, can just consume "depth-first", because ordering doesn't matter
-  // It will always return the words in alphabetical order, but that's OK because you can rearrange
-  //auto results = WordFinder::Consume(h, "rankoilcans");
-
-  //// TEST 6
-  //Trie h("SOWPODS");
-  //Strings box;
-  //box.push_back("aa");
-  //Trie::read_static(kSowpodsAll, h);
-  //auto results = WordFinder::Box(
-  //  h,
-  //  box,
-  //  true
-  //  );
-  //print_results(results);
-
-  //// TEST 7
-  //Trie h("SOWPODS");
-  //Strings box;
-  //box.push_back("sna");
-  //box.push_back("sek");
-  //Trie::read_static(kSowpodsAll, h);
-  //auto results = WordFinder::Box(
-  //  h,
-  //  box,
-  //  true
-  //  );
-  //print_results(results);
-
+  Tests::run();
+  
   // Can set background colours by shifting background color by 4
   //setColor((BLUE << 4) | YELLOW);
   cls();
