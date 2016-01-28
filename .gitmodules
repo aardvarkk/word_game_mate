@@ -1,6 +1,6 @@
 [submodule "cpptrie"]
 	path = cpptrie
-	url = git@github.com:aardvarkk/cpptrie
+	url = git@github.com:aardvarkk/cpptrie.git
 [submodule "rlutil"]
 	path = rlutil
-	url = git@github.com:aardvarkk/rlutil
+	url = git@github.com:tapio/rlutil.git
