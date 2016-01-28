@@ -610,7 +610,8 @@ int main(int argc, char const* agrv[])
 	//Trie::read_static(kSowpodsAll, h);
 
 	Tests::run();
-
+	return EXIT_SUCCESS;
+	
 	// Can set background colours by shifting background color by 4
 	//setColor((BLUE << 4) | YELLOW);
 	cls();

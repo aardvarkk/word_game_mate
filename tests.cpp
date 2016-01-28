@@ -28,9 +28,6 @@ void Tests::run() {
 	  h.insert("ma");
 	  auto results = WordFinder::Anagrams(h, "ahim");
 	  assert(results.size() == 2);
-	  cout << results[0][0] << endl;
-	  cout << results[1][0] << endl;
-
 	  assert(results[0][0] == "hi");
 	  assert(results[1][0] == "ma");
 	}
@@ -41,6 +38,9 @@ void Tests::run() {
 	  h.insert("aa");
 	  h.insert("abac");
 	  auto results = WordFinder::Anagrams(h, "abac");
+		assert(results.size() == 2);
+		assert(results[0][0] == "aa");
+		assert(results[1][0] == "abac");
 	}
 
   // TEST 3
@@ -50,6 +50,10 @@ void Tests::run() {
 	  h.insert("nirl");
 	  h.insert("st");
 	  auto results = WordFinder::Anagrams(h, "starline");
+		assert(results.size() == 3);
+		assert(results[0][0] == "ae");
+		assert(results[1][0] == "nirl");
+		assert(results[2][0] == "st");
 	}
 
   // TEST 4
@@ -62,10 +66,12 @@ void Tests::run() {
 	  h.insert("ann");
 	  h.insert("anns");
 	  auto results = WordFinder::Anagrams(h, "nacakirosln");
+		assert(results.size() == 6);
 		
 		// When consuming, can just consume "depth-first", because ordering doesn't matter
   	// It will always return the words in alphabetical order, but that's OK because you can rearrange
   	auto results2 = WordFinder::Anagrams(h, "rankoilcans");
+		assert(results2.size() == 6);
   }
 
   // TEST 5

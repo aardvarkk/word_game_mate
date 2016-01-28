@@ -35,6 +35,11 @@
 		8AABC53E1C59DE7100CEF5D1 /* Trie.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Trie.cpp; path = cpptrie/Trie.cpp; sourceTree = "<group>"; };
 		8AABC53F1C59DE7100CEF5D1 /* TrieNode.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = TrieNode.cpp; path = cpptrie/TrieNode.cpp; sourceTree = "<group>"; };
 		8AABC5451C59E34100CEF5D1 /* word_game_mate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = word_game_mate; sourceTree = BUILT_PRODUCTS_DIR; };
+		8AABC5531C59F04600CEF5D1 /* string_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = string_utils.h; sourceTree = "<group>"; };
+		8AABC5541C59F04600CEF5D1 /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = types.h; sourceTree = "<group>"; };
+		8AABC5551C59F04600CEF5D1 /* word_finder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = word_finder.h; sourceTree = "<group>"; };
+		8AABC5561C59F10100CEF5D1 /* Trie.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trie.h; path = cpptrie/Trie.h; sourceTree = "<group>"; };
+		8AABC5571C59F10100CEF5D1 /* TrieNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TrieNode.h; path = cpptrie/TrieNode.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +57,9 @@
 			isa = PBXGroup;
 			children = (
 				8AABC5401C59DE7500CEF5D1 /* cpptrie */,
+				8AABC5531C59F04600CEF5D1 /* string_utils.h */,
+				8AABC5541C59F04600CEF5D1 /* types.h */,
+				8AABC5551C59F04600CEF5D1 /* word_finder.h */,
 				8AABC5391C59DE6700CEF5D1 /* main.cpp */,
 				8AABC53A1C59DE6700CEF5D1 /* sowpods_all.cpp */,
 				8AABC53B1C59DE6700CEF5D1 /* tests.cpp */,
@@ -63,6 +71,8 @@
 		8AABC5401C59DE7500CEF5D1 /* cpptrie */ = {
 			isa = PBXGroup;
 			children = (
+				8AABC5561C59F10100CEF5D1 /* Trie.h */,
+				8AABC5571C59F10100CEF5D1 /* TrieNode.h */,
 				8AABC53E1C59DE7100CEF5D1 /* Trie.cpp */,
 				8AABC53F1C59DE7100CEF5D1 /* TrieNode.cpp */,
 			);
@@ -258,6 +268,7 @@
 				8AABC54C1C59E34100CEF5D1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
