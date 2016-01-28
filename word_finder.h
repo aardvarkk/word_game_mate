@@ -35,6 +35,11 @@ public:
     return t.anagrams(str, consume_all, min_wordlet, max_wordlet);
   }
 
+  // Take the source string and try to make a wordlist word using ? as wildcard
+  static Results Crossword(Trie const& t, std::string const& str) {
+    return t.crossword(str);
+  }
+
   static Results Box(
     Trie const& t,
     Strings const& box,

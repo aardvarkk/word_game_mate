@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iostream>
 
 #include "tests.h"
 #include "word_finder.h"
@@ -26,6 +27,12 @@ void Tests::run() {
 	  h.insert("hi");
 	  h.insert("ma");
 	  auto results = WordFinder::Anagrams(h, "ahim");
+	  assert(results.size() == 2);
+	  cout << results[0][0] << endl;
+	  cout << results[1][0] << endl;
+
+	  assert(results[0][0] == "hi");
+	  assert(results[1][0] == "ma");
 	}
 
   // TEST 2
