@@ -123,5 +123,7 @@ void Tests::run() {
 				assert(!s.empty());
 			}
 		}
+		StringUtils::sort_results(results, kLongestWord);
+		StringUtils::sort_results(results, kFewestWords);
 	}
 }

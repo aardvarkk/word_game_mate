@@ -34,15 +34,7 @@ enum DisplayMethod
 
 static DisplayMethod display_method_ = kCommaSeparated;
 
-static size_t max_results_ = 50;
-
-enum SortMethod
-{
-	kLongestWord = 0,
-	kFewestWords,
-	kMostWords,
-	kNumSortMethods
-};
+static size_t max_results_ = 100;
 
 static SortMethod sort_method_ = kLongestWord;
 
@@ -64,7 +56,7 @@ string DisplayMethodString(DisplayMethod display_method)
 {
 	switch (display_method) {
 	case kLine:
-		return "One Word Per Line";
+		return "One Result Per Line";
 	case kCommaSeparated:
 		return "Comma Separated";
 	default:
@@ -299,61 +291,6 @@ void command_is_word(Trie const& wordlist)
 	cout << " in the " << wordlist.get_name() << " wordlist" << endl;
 }
 
-Results sort_results(Results const& unsorted)
-{
-	return unsorted;
-	
-//	auto sorted = unsorted;
-//
-//	switch (sort_method_) {
-//
-//		// Sort by longest word
-//	case kLongestWord:
-//	{
-//		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
-//		{
-//			return StringUtils::compare_wordsets(a, b) > 0;
-//		});
-//	}
-//		break;
-//
-//		// Sort by most words
-//	case kMostWords:
-//	{
-//		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
-//		{
-//			if (a.size() != b.size()) {
-//				return a.size() > b.size();
-//			}
-//			// Same number of words, so must use sorting from longest word above to find lexicographically higher one
-//			else {
-//				return StringUtils::compare_wordsets(a, b) < 0;
-//			}
-//		});
-//	}
-//		break;
-//
-//		// Sort by fewest words
-//	case kFewestWords:
-//	{
-//		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
-//		{
-//			if (a.size() != b.size()) {
-//				return a.size() < b.size();
-//			}
-//			// Same number of words, so must use sorting from longest word above to find lexicographically higher one
-//			else {
-//				return StringUtils::compare_wordsets(a, b) > 0;
-//			}
-//		});
-//	}
-//		break;
-//
-//	}
-//
-//	return sorted;
-}
-
 void print_results(Results const& results)
 {
 	if (results.empty()) {
@@ -441,8 +378,9 @@ int command_loop()
 			if (wl_idx < 0) {
 				break;
 			}
-			auto sorted = sort_results(command_anagram(*wordlists_[wl_idx]));
-			print_results(sorted);
+			auto results = command_anagram(*wordlists_[wl_idx]);
+			StringUtils::sort_results(results, sort_method_);
+			print_results(results);
 		}
 			break;
 
@@ -453,8 +391,9 @@ int command_loop()
 			if (wl_idx < 0) {
 				break;
 			}
-			auto sorted = sort_results(command_box(*wordlists_[wl_idx]));
-			print_results(sorted);
+			auto results = command_box(*wordlists_[wl_idx]);
+			StringUtils::sort_results(results, sort_method_);
+			print_results(results);
 		}
 			break;
 
@@ -482,8 +421,9 @@ int command_loop()
 			if (wl_idx < 0) {
 				break;
 			}
-			auto sorted = sort_results(command_crossword(*wordlists_[wl_idx]));
-			print_results(sorted);			
+			auto results = command_crossword(*wordlists_[wl_idx]);
+			StringUtils::sort_results(results, sort_method_);
+			print_results(results);
 		}
 		break;
 
