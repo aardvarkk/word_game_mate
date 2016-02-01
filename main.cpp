@@ -301,55 +301,57 @@ void command_is_word(Trie const& wordlist)
 
 Results sort_results(Results const& unsorted)
 {
-	auto sorted = unsorted;
-
-	switch (sort_method_) {
-
-		// Sort by longest word
-	case kLongestWord:
-	{
-		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
-		{
-			return StringUtils::compare_wordsets(a, b) > 0;
-		});
-	}
-		break;
-
-		// Sort by most words
-	case kMostWords:
-	{
-		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
-		{
-			if (a.size() != b.size()) {
-				return a.size() > b.size();
-			}
-			// Same number of words, so must use sorting from longest word above to find lexicographically higher one
-			else {
-				return StringUtils::compare_wordsets(a, b) < 0;
-			}
-		});
-	}
-		break;
-
-		// Sort by fewest words
-	case kFewestWords:
-	{
-		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
-		{
-			if (a.size() != b.size()) {
-				return a.size() < b.size();
-			}
-			// Same number of words, so must use sorting from longest word above to find lexicographically higher one
-			else {
-				return StringUtils::compare_wordsets(a, b) > 0;
-			}
-		});
-	}
-		break;
-
-	}
-
-	return sorted;
+	return unsorted;
+	
+//	auto sorted = unsorted;
+//
+//	switch (sort_method_) {
+//
+//		// Sort by longest word
+//	case kLongestWord:
+//	{
+//		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+//		{
+//			return StringUtils::compare_wordsets(a, b) > 0;
+//		});
+//	}
+//		break;
+//
+//		// Sort by most words
+//	case kMostWords:
+//	{
+//		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+//		{
+//			if (a.size() != b.size()) {
+//				return a.size() > b.size();
+//			}
+//			// Same number of words, so must use sorting from longest word above to find lexicographically higher one
+//			else {
+//				return StringUtils::compare_wordsets(a, b) < 0;
+//			}
+//		});
+//	}
+//		break;
+//
+//		// Sort by fewest words
+//	case kFewestWords:
+//	{
+//		sort(sorted.begin(), sorted.end(), [](Strings const& a, Strings const& b) -> bool
+//		{
+//			if (a.size() != b.size()) {
+//				return a.size() < b.size();
+//			}
+//			// Same number of words, so must use sorting from longest word above to find lexicographically higher one
+//			else {
+//				return StringUtils::compare_wordsets(a, b) > 0;
+//			}
+//		});
+//	}
+//		break;
+//
+//	}
+//
+//	return sorted;
 }
 
 void print_results(Results const& results)
@@ -610,7 +612,7 @@ int main(int argc, char const* agrv[])
 	//Trie::read_static(kSowpodsAll, h);
 
 	Tests::run();
-	return EXIT_SUCCESS;
+//	return EXIT_SUCCESS;
 	
 	// Can set background colours by shifting background color by 4
 	//setColor((BLUE << 4) | YELLOW);
